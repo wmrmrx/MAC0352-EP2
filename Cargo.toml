@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+	"pacman_server",
+	"pacman_client",
+	"pacman_communication"
+]
