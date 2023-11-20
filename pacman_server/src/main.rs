@@ -46,11 +46,11 @@ fn main() {
         .unwrap();
     log4rs::init_config(config).unwrap();
 
-    log::info!("Configuration is setup. Initializing server...");
+    log::info!("New server is initialized");
 
     loop {
-        log::info!("Starting new game server...");
+        log::info!("Starting new game");
         let keep_running = Arc::new(AtomicBool::new(true));
-        server::run(args.port);
+        server::run(args.port, keep_running);
     }
 }
