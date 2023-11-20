@@ -1,7 +1,11 @@
 use std::{
-    net::{SocketAddr, TcpStream, SocketAddrV4, UdpSocket, Ipv4Addr, TcpListener},
-    sync::{Arc, Mutex, mpsc::{channel, Sender}, atomic::AtomicBool},
-    time::Duration, io::Write,
+    net::{Ipv4Addr, SocketAddrV4, TcpListener, UdpSocket},
+    sync::{
+        atomic::AtomicBool,
+        mpsc::{channel, Sender},
+        Arc, Mutex,
+    },
+    time::Duration,
 };
 
 use pacman_communication::Connection;
@@ -10,18 +14,26 @@ const TICK: Duration = Duration::from_secs(1);
 
 type ConnectionListRef = Arc<Mutex<Vec<Connection>>>;
 
-fn start_listeners(port: u16, connections: ConnectionListRef, send: Sender<String>, keep_running: Arc<AtomicBool>) {
+fn start_listeners(
+    port: u16,
+    connections: ConnectionListRef,
+    send: Sender<String>,
+    keep_running: Arc<AtomicBool>,
+) {
     {
         // Udp Listener
-        let (connections, send, keep_running) = (connections.clone(), send.clone(), keep_running.clone());
+        let (connections, send, keep_running) =
+            (connections.clone(), send.clone(), keep_running.clone());
         std::thread::spawn(move || {
             let listener = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port)).unwrap();
         });
     }
     {
-        let (connections, send, keep_running) = (connections.clone(), send.clone(), keep_running.clone());
+        let (connections, send, keep_running) =
+            (connections.clone(), send.clone(), keep_running.clone());
         std::thread::spawn(move || {
-            let listener = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port)).unwrap();
+            let listener =
+                TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port)).unwrap();
         });
     }
 }
