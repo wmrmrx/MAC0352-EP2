@@ -12,8 +12,8 @@ use std::{
 
 use crate::database::Database;
 use pacman_communication::{
-    ClientServerMessage, ClientServerMessageEnum, Connection, LoginRequest, LoginResponse,
-    PacmanMessage, ServerClientMessage,
+    ClientServerMessage, ClientServerMessageEnum, Connection, CreateUserResponse, LoginRequest,
+    LoginResponse, PacmanMessage, ServerClientMessage,
 };
 
 fn current_time() -> Duration {
@@ -40,6 +40,13 @@ impl ConnectionData {
         connection: &Connection,
     ) -> bool {
         connections.lock().unwrap().get(connection).is_some()
+    }
+
+    fn get(
+        connections: &Mutex<BTreeMap<Connection, ConnectionData>>,
+        connection: &Connection,
+    ) -> Self {
+        connections.lock().unwrap().get(connection).unwrap().clone()
     }
 
     fn add_new(connections: &Mutex<BTreeMap<Connection, ConnectionData>>, connection: &Connection) {
@@ -95,6 +102,9 @@ impl ConnectionData {
             .unwrap()
             .status = status;
     }
+
+    // Returns a party if it exists, where the first element of the tuple is the Pacman
+    fn get_party() -> Option<(Connection, Vec<Connection>)> {}
 }
 
 type ConnectionListRef = Arc<Mutex<BTreeMap<Connection, ConnectionData>>>;
@@ -217,6 +227,24 @@ pub fn run(port: u16, keep_running: Arc<AtomicBool>) {
                 conn.send(PacmanMessage::ServerClient(
                     ServerClientMessage::LogoutResponse,
                 ));
+            }
+            ClientServerMessageEnum::CreateUserRequest(request) => {
+                if !ConnectionData::exists(&connections, &conn) {
+                    continue;
+                }
+                let response = database.create_user(request);
+                conn.send(PacmanMessage::ServerClient(
+                    ServerClientMessage::CreateUserResponse(response),
+                ));
+            }
+            ClientServerMessageEnum::ChangePasswordRequest(request) => {
+                if !ConnectionData::exists(&connections, &conn) {
+                    continue;
+                }
+                let conn_data = ConnectionData::get(&connections, &conn);
+                let user = if let Some(user) = conn_data.user { user } else { continue; };
+                let response = database.change_password_request(&user, request);
+                conn.send(PacmanMessage::ServerClient(ServerClientMessage::ChangePasswordResponse(response)));
             }
         }
     }
