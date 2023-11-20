@@ -1,8 +1,14 @@
 //! Module to deal with persistent user and password data
 
-use std::{io::{Write, Read}, fs::{self, File}};
+use std::{
+    fs::File,
+    io::{Read, Write},
+};
 
-use pacman_communication::{CreateUserResponse, CreateUserRequest, LoginRequest, LoginResponse, ChangePasswordRequest, ChangePasswordResponse};
+use pacman_communication::{
+    ChangePasswordRequest, ChangePasswordResponse, CreateUserRequest, CreateUserResponse,
+    LoginRequest, LoginResponse,
+};
 
 pub struct Database;
 
@@ -25,7 +31,10 @@ impl Database {
         self.open_user_file(user).is_some()
     }
 
-    pub fn create_user(&self, CreateUserRequest { user, password }: CreateUserRequest) -> CreateUserResponse {
+    pub fn create_user(
+        &self,
+        CreateUserRequest { user, password }: CreateUserRequest,
+    ) -> CreateUserResponse {
         if self.user_exists(&user) {
             CreateUserResponse::Rejected
         } else {
@@ -52,7 +61,14 @@ impl Database {
         }
     }
 
-    pub fn change_password_request(&self, user: &str, ChangePasswordRequest { old_password, new_password }: ChangePasswordRequest) -> ChangePasswordResponse {
+    pub fn change_password_request(
+        &self,
+        user: &str,
+        ChangePasswordRequest {
+            old_password,
+            new_password,
+        }: ChangePasswordRequest,
+    ) -> ChangePasswordResponse {
         if let Some(mut file) = self.open_user_file(&user) {
             let mut current_password = String::new();
             let _ = file.read_to_string(&mut current_password).unwrap();

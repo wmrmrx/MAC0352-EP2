@@ -3,7 +3,8 @@
 
 use std::{
     io::Write,
-    net::{Ipv4Addr, SocketAddrV4, TcpStream, UdpSocket}, time::Duration,
+    net::{Ipv4Addr, SocketAddrV4, TcpStream, UdpSocket},
+    time::Duration,
 };
 
 use serde::{Deserialize, Serialize};
@@ -19,15 +20,15 @@ pub enum Connection {
 }
 
 impl Connection {
-    pub fn send(&self, bytes: &[u8]) {
+    pub fn send(&self, msg: PacmanMessage) {
         match self {
             Connection::Udp(addr) => {
                 let socket = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap();
-                socket.send_to(bytes, addr).unwrap();
+                socket.send_to(&msg.to_bytes(), addr).unwrap();
             }
             Connection::Tcp(addr) => {
                 let mut stream = TcpStream::connect(addr).unwrap();
-                let _ = stream.write(bytes).unwrap();
+                let _ = stream.write(&msg.to_bytes()).unwrap();
             }
         }
     }
@@ -55,7 +56,7 @@ impl Direction {
 
 #[derive(Serialize, Deserialize)]
 pub struct ConnectRequest {
-    pub listener: Connection
+    pub listener: Connection,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -106,14 +107,14 @@ pub struct ConnectedUsersResponse {
 pub enum CreatePartyResponse {
     Success,
     AlreadyExists,
-    NotLoggedIn
+    NotLoggedIn,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum JoinPartyResponse {
     Successg,
     AlreadyExists,
-    NotLoggedIn
+    NotLoggedIn,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -126,13 +127,13 @@ pub enum ServerClientMessage {
     LogoutResponse,
     ConnectedUsersResponse(ConnectedUsersResponse),
     CreatePartyResponse(CreatePartyResponse),
-    JoinPartyResponse(JoinPartyResponse)
+    JoinPartyResponse(JoinPartyResponse),
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ClientServerMessage {
-    pub id: Option<Connection>,
-    pub message: ClientServerMessageEnum
+    pub connection: Connection,
+    pub message: ClientServerMessageEnum,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -140,19 +141,19 @@ pub enum ClientServerMessageEnum {
     ConnectRequest(ConnectRequest),
     Heartbeat,
     CreateUserRequest(CreateUserRequest),
-    LoginRequest(LoginRequest),        
+    LoginRequest(LoginRequest),
     ChangePasswordRequest(ChangePasswordRequest),
     LogoutRequest,
     ConnectedUsersRequest,
     CreatePartyRequest,
-    JoinPartyRequest
+    JoinPartyRequest,
 }
 
 /// Generic P2P client messages
 #[derive(Serialize, Deserialize)]
 pub struct ClientP2PMessage {
-    pub id: Connection,
-    pub message: ClientP2PMessageEnum
+    pub connection: Connection,
+    pub message: ClientP2PMessageEnum,
 }
 
 #[derive(Serialize, Deserialize)]
