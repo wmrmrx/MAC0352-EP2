@@ -3,13 +3,16 @@
 
 use std::{
     io::Write,
-    net::{Ipv4Addr, SocketAddrV4, TcpStream, UdpSocket},
+    net::{Ipv4Addr, SocketAddrV4, TcpStream, UdpSocket}, time::Duration,
 };
 
 use serde::{Deserialize, Serialize};
 
+pub const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(100);
+pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(300);
+
 // Bytes are valid ASCII characters
-pub trait PacmanMessage<'a>: Serialize + Deserialize<'a> {
+pub trait PacmanBinary<'a>: Serialize + Deserialize<'a> {
     fn to_bytes(&self) -> Vec<u8> {
         serde_json::to_string(self).unwrap().into_bytes()
     }
@@ -18,7 +21,7 @@ pub trait PacmanMessage<'a>: Serialize + Deserialize<'a> {
     }
 }
 
-impl<'a, T> PacmanMessage<'a> for T where T: Serialize + Deserialize<'a> {}
+impl<'a, T> PacmanBinary<'a> for T where T: Serialize + Deserialize<'a> {}
 
 /// Each connection has a listener
 #[derive(Serialize, Deserialize, PartialEq)]
@@ -172,8 +175,8 @@ pub enum ClientP2PMessageEnum {
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum Message {
+pub enum PacmanMessage {
     ServerClient(ServerClientMessage),
-    ClientServer(ServerClientMessage),
+    ClientServer(ClientServerMessage),
     ClientP2P(ClientP2PMessage),
 }
