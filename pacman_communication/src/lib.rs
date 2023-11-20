@@ -11,20 +11,8 @@ use serde::{Deserialize, Serialize};
 pub const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(100);
 pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(300);
 
-// Bytes are valid ASCII characters
-pub trait PacmanBinary<'a>: Serialize + Deserialize<'a> {
-    fn to_bytes(&self) -> Vec<u8> {
-        serde_json::to_string(self).unwrap().into_bytes()
-    }
-    fn from_bytes<'b: 'a>(bytes: &'b [u8]) -> Self {
-        serde_json::from_str(std::str::from_utf8(bytes).unwrap()).unwrap()
-    }
-}
-
-impl<'a, T> PacmanBinary<'a> for T where T: Serialize + Deserialize<'a> {}
-
 /// Each connection has a listener
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Connection {
     Udp(SocketAddrV4),
     Tcp(SocketAddrV4), // Using TCP like UDP for simplicity (open a new connection per stream)
@@ -67,13 +55,13 @@ impl Direction {
 
 #[derive(Serialize, Deserialize)]
 pub struct ConnectRequest {
-    listener: Connection
+    pub listener: Connection
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateUserRequest {
-    user: String,
-    password: String,
+    pub user: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -84,9 +72,8 @@ pub enum CreateUserResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct LoginRequest {
-    user: String,
-    password: String,
-
+    pub user: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -97,8 +84,8 @@ pub enum LoginResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct ChangePasswordRequest {
-    old_password: String,
-    new_password: String,
+    pub old_password: String,
+    pub new_password: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -144,8 +131,8 @@ pub enum ServerClientMessage {
 
 #[derive(Serialize, Deserialize)]
 pub struct ClientServerMessage {
-    id: Option<Connection>,
-    message: ClientServerMessageEnum
+    pub id: Option<Connection>,
+    pub message: ClientServerMessageEnum
 }
 
 #[derive(Serialize, Deserialize)]
@@ -164,8 +151,8 @@ pub enum ClientServerMessageEnum {
 /// Generic P2P client messages
 #[derive(Serialize, Deserialize)]
 pub struct ClientP2PMessage {
-    id: Connection,
-    message: ClientP2PMessageEnum
+    pub id: Connection,
+    pub message: ClientP2PMessageEnum
 }
 
 #[derive(Serialize, Deserialize)]
@@ -179,4 +166,13 @@ pub enum PacmanMessage {
     ServerClient(ServerClientMessage),
     ClientServer(ClientServerMessage),
     ClientP2P(ClientP2PMessage),
+}
+
+impl PacmanMessage {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        serde_json::to_string(self).unwrap().into_bytes()
+    }
+    pub fn from_bytes(bytes: &[u8]) -> Self {
+        serde_json::from_str(std::str::from_utf8(bytes).unwrap()).unwrap()
+    }
 }

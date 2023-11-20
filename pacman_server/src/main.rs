@@ -1,4 +1,5 @@
-mod server;
+pub mod database;
+pub mod server;
 
 use clap::Parser;
 use log::LevelFilter;
