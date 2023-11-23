@@ -13,7 +13,7 @@ pub const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(100);
 pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(300);
 
 /// Each connection has a listener
-#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Connection {
     Udp(SocketAddrV4),
     Tcp(SocketAddrV4), // Using TCP like UDP for simplicity (open a new connection per stream)
@@ -55,11 +55,6 @@ impl Direction {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ConnectRequest {
-    pub listener: Connection,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct CreateUserRequest {
     pub user: String,
     pub password: String,
@@ -71,7 +66,7 @@ pub enum CreateUserResponse {
     Rejected,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct LoginRequest {
     pub user: String,
     pub password: String,
@@ -92,15 +87,14 @@ pub struct ChangePasswordRequest {
 #[derive(Serialize, Deserialize)]
 pub enum ChangePasswordResponse {
     Success,
-    NogLoggedIn,
+    NotLoggedIn,
     Fail,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ConnectedUsersResponse {
-    user: String,
-    old_password: String,
-    new_password: String,
+    pub pacman: (Connection, String),
+    pub ghosts: Vec<(Connection, String)>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -112,20 +106,19 @@ pub enum CreatePartyResponse {
 
 #[derive(Serialize, Deserialize)]
 pub enum JoinPartyResponse {
-    Successg,
-    AlreadyExists,
+    Success,
+    DoesNotExists,
     NotLoggedIn,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum ServerClientMessage {
     ConnectResponse,
-    Heartbeat,
     CreateUserResponse(CreateUserResponse),
     LoginResponse(LoginResponse),
     ChangePasswordResponse(ChangePasswordResponse),
     LogoutResponse,
-    ConnectedUsersResponse(ConnectedUsersResponse),
+    ConnectedUsersResponse(Option<ConnectedUsersResponse>),
     CreatePartyResponse(CreatePartyResponse),
     JoinPartyResponse(JoinPartyResponse),
 }
@@ -138,7 +131,7 @@ pub struct ClientServerMessage {
 
 #[derive(Serialize, Deserialize)]
 pub enum ClientServerMessageEnum {
-    ConnectRequest(ConnectRequest),
+    ConnectRequest,
     Heartbeat,
     CreateUserRequest(CreateUserRequest),
     LoginRequest(LoginRequest),

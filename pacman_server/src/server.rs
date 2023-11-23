@@ -12,21 +12,23 @@ use std::{
 
 use crate::database::Database;
 use pacman_communication::{
-    ClientServerMessage, ClientServerMessageEnum, Connection, CreateUserResponse, LoginRequest,
-    LoginResponse, PacmanMessage, ServerClientMessage,
+    ChangePasswordResponse, ClientServerMessage, ClientServerMessageEnum, ConnectedUsersResponse,
+    Connection, CreatePartyResponse, JoinPartyResponse, LoginResponse, PacmanMessage,
+    ServerClientMessage,
 };
 
 fn current_time() -> Duration {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 enum GameStatus {
     Pacman,
     Ghost,
     Idle,
 }
 
+// Notice two connections can have the same user, and could even play the same game!
 #[derive(Clone)]
 struct ConnectionData {
     last_heartbeat: Duration,
@@ -45,13 +47,13 @@ impl ConnectionData {
     fn get(
         connections: &Mutex<BTreeMap<Connection, ConnectionData>>,
         connection: &Connection,
-    ) -> Self {
-        connections.lock().unwrap().get(connection).unwrap().clone()
+    ) -> Option<Self> {
+        connections.lock().unwrap().get(connection).cloned()
     }
 
     fn add_new(connections: &Mutex<BTreeMap<Connection, ConnectionData>>, connection: &Connection) {
         connections.lock().unwrap().insert(
-            *connection,
+            connection.clone(),
             ConnectionData {
                 last_heartbeat: current_time(),
                 user: None,
@@ -61,7 +63,27 @@ impl ConnectionData {
     }
 
     fn remove(connections: &Mutex<BTreeMap<Connection, ConnectionData>>, connection: &Connection) {
+        ConnectionData::logout(connections, connection);
         connections.lock().unwrap().remove(&connection);
+    }
+
+    fn logout(connections: &Mutex<BTreeMap<Connection, ConnectionData>>, connection: &Connection) {
+        let mut connections = connections.lock().unwrap();
+        let mut finish_game = false;
+        if let Some(conn_data) = connections.get_mut(connection) {
+            conn_data.user = None;
+            if conn_data.status == GameStatus::Pacman {
+                // If pacman is quitting the game, finish the game since he's the server in this
+                // P2P game
+                finish_game = true;
+            }
+            conn_data.status = GameStatus::Idle;
+        }
+        if finish_game {
+            for conn_data in connections.values_mut() {
+                conn_data.status = GameStatus::Idle;
+            }
+        }
     }
 
     fn set_heartbeat(
@@ -73,8 +95,7 @@ impl ConnectionData {
             .lock()
             .unwrap()
             .get_mut(connection)
-            .unwrap()
-            .last_heartbeat = time;
+            .map(|conn_data| conn_data.last_heartbeat = time);
     }
 
     fn set_user(
@@ -86,8 +107,7 @@ impl ConnectionData {
             .lock()
             .unwrap()
             .get_mut(connection)
-            .unwrap()
-            .user = user;
+            .map(|conn_data| conn_data.user = user);
     }
 
     fn set_status(
@@ -99,12 +119,39 @@ impl ConnectionData {
             .lock()
             .unwrap()
             .get_mut(connection)
-            .unwrap()
-            .status = status;
+            .map(|conn_data| conn_data.status = status);
     }
 
     // Returns a party if it exists, where the first element of the tuple is the Pacman
-    fn get_party() -> Option<(Connection, Vec<Connection>)> {}
+    fn get_party(
+        connections: &Mutex<BTreeMap<Connection, ConnectionData>>,
+    ) -> Option<ConnectedUsersResponse> {
+        let mut pacman = None;
+        let mut ghosts = vec![];
+        for (conn, conn_data) in connections.lock().unwrap().iter() {
+            match conn_data.status {
+                GameStatus::Idle => continue,
+                GameStatus::Ghost => ghosts.push((
+                    conn.clone(),
+                    conn_data.user.clone().unwrap_or("undefined".to_owned()),
+                )),
+                GameStatus::Pacman => {
+                    assert!(pacman.is_none());
+                    pacman = Some((
+                        conn.clone(),
+                        conn_data.user.clone().unwrap_or("undefined".to_owned()),
+                    ));
+                }
+            }
+        }
+        match pacman {
+            None => {
+                assert!(ghosts.is_empty());
+                None
+            }
+            Some(pacman) => Some(ConnectedUsersResponse { pacman, ghosts }),
+        }
+    }
 }
 
 type ConnectionListRef = Arc<Mutex<BTreeMap<Connection, ConnectionData>>>;
@@ -181,7 +228,7 @@ pub fn run(port: u16, keep_running: Arc<AtomicBool>) {
     loop {
         let msg = match recv.recv() {
             Ok(msg) => msg,
-            Err(err) => break,
+            Err(_) => break,
         };
         let (conn, msg) = if let PacmanMessage::ClientServer(ClientServerMessage {
             connection: conn,
@@ -195,7 +242,7 @@ pub fn run(port: u16, keep_running: Arc<AtomicBool>) {
         };
 
         match msg {
-            ClientServerMessageEnum::ConnectRequest(request) => {
+            ClientServerMessageEnum::ConnectRequest => {
                 if ConnectionData::exists(&connections, &conn) {
                     continue;
                 }
@@ -211,7 +258,7 @@ pub fn run(port: u16, keep_running: Arc<AtomicBool>) {
                 if !ConnectionData::exists(&connections, &conn) {
                     continue;
                 }
-                let response = database.login_request(request);
+                let response = database.login_request(request.clone());
                 if let LoginResponse::LoggedIn = response {
                     ConnectionData::set_user(&connections, &conn, Some(request.user))
                 }
@@ -238,13 +285,63 @@ pub fn run(port: u16, keep_running: Arc<AtomicBool>) {
                 ));
             }
             ClientServerMessageEnum::ChangePasswordRequest(request) => {
-                if !ConnectionData::exists(&connections, &conn) {
-                    continue;
+                if let Some(conn_data) = ConnectionData::get(&connections, &conn) {
+                    let response = if let Some(user) = conn_data.user {
+                        database.change_password_request(&user, request)
+                    } else {
+                        ChangePasswordResponse::NotLoggedIn
+                    };
+                    conn.send(PacmanMessage::ServerClient(
+                        ServerClientMessage::ChangePasswordResponse(response),
+                    ));
                 }
-                let conn_data = ConnectionData::get(&connections, &conn);
-                let user = if let Some(user) = conn_data.user { user } else { continue; };
-                let response = database.change_password_request(&user, request);
-                conn.send(PacmanMessage::ServerClient(ServerClientMessage::ChangePasswordResponse(response)));
+            }
+            ClientServerMessageEnum::CreatePartyRequest => {
+                let response = if ConnectionData::get_party(&connections).is_none() {
+                    if let Some(conn_data) = ConnectionData::get(&connections, &conn) {
+                        if let Some(user) = conn_data.user {
+                            log::info!("User {user} created a game as pacman!");
+                            ConnectionData::set_status(&connections, &conn, GameStatus::Pacman);
+                            CreatePartyResponse::Success
+                        } else {
+                            CreatePartyResponse::AlreadyExists
+                        }
+                    } else {
+                        CreatePartyResponse::NotLoggedIn
+                    }
+                } else {
+                    CreatePartyResponse::AlreadyExists
+                };
+                conn.send(PacmanMessage::ServerClient(
+                    ServerClientMessage::CreatePartyResponse(response),
+                ));
+            }
+            ClientServerMessageEnum::JoinPartyRequest => {
+                let response = if ConnectionData::get_party(&connections).is_none() {
+                    JoinPartyResponse::DoesNotExists
+                } else {
+                    if let Some(conn_data) = ConnectionData::get(&connections, &conn) {
+                        if let Some(user) = conn_data.user {
+                            log::info!("User {user} joined a game as a ghost!");
+                            ConnectionData::set_status(&connections, &conn, GameStatus::Ghost);
+                            JoinPartyResponse::Success
+                        } else {
+                            JoinPartyResponse::NotLoggedIn
+                        }
+                    } else {
+                        JoinPartyResponse::NotLoggedIn
+                    }
+                };
+                conn.send(PacmanMessage::ServerClient(
+                    ServerClientMessage::JoinPartyResponse(response),
+                ));
+            }
+            ClientServerMessageEnum::ConnectedUsersRequest => {
+                conn.send(PacmanMessage::ServerClient(
+                    ServerClientMessage::ConnectedUsersResponse(ConnectionData::get_party(
+                        &connections,
+                    )),
+                ));
             }
         }
     }
