@@ -36,8 +36,7 @@ pub enum ChangePasswordResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct ConnectedUsersResponse {
-    pub pacman: (String, SocketAddr),
-    pub ghosts: String,
+    pub users: Box<[String]>
 }
 
 #[derive(Serialize, Deserialize)]
