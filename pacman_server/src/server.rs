@@ -1,7 +1,7 @@
 mod database;
+mod game;
 mod heartbeat;
 mod listeners;
-mod game;
 
 use std::{
     collections::{BTreeMap, BTreeSet},

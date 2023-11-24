@@ -1,3 +1,6 @@
+use pacman_communication::Connection;
+use std::{collections::BTreeMap, net::SocketAddr};
+
 #[derive(Clone, PartialEq)]
 pub enum GameStatus {
     Pacman(SocketAddr), // Pacman must have a TCPListener in this address
