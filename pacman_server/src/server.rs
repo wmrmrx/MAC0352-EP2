@@ -4,7 +4,7 @@ mod listeners;
 use std::{
     collections::{BTreeMap, BTreeSet},
     io::Read,
-    net::{Ipv4Addr, SocketAddrV4, TcpListener, UdpSocket},
+    net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpListener, UdpSocket},
     sync::{
         mpsc::{channel, Sender},
         Arc, Mutex,
@@ -13,11 +13,7 @@ use std::{
 };
 
 use database::Database;
-use pacman_communication::{
-    Connection, PacmanMessage,
-    server_client, client_server,
-};
-
+use pacman_communication::{client_server, server_client, Connection, PacmanMessage};
 
 fn current_time() -> Duration {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
@@ -25,7 +21,7 @@ fn current_time() -> Duration {
 
 #[derive(Clone, PartialEq)]
 enum GameStatus {
-    Pacman,
+    Pacman(SocketAddr),
     Ghost,
     Idle,
 }
@@ -44,7 +40,7 @@ struct ConnectionTable {
 impl ConnectionTable {
     #[must_use]
     pub fn new() -> Self {
-        Self  {
+        Self {
             connections: BTreeMap::new(),
             users: BTreeMap::new(),
         }
@@ -53,10 +49,13 @@ impl ConnectionTable {
     fn kick_all(&mut self) {
         for (conn, conn_data) in self.connections.iter_mut() {
             use GameStatus::*;
-            match conn_data.status  {
-                Pacman | Ghost => {
+            match conn_data.status {
+                Pacman(_) | Ghost => {
                     conn_data.status = GameStatus::Idle;
-                    log::info!("Kicking connection {conn:?} with user {user} from the game.", user = conn_data.user.unwrap_or("err".to_owned()));
+                    log::info!(
+                        "Kicking connection {conn:?} with user {user} from the game.",
+                        user = conn_data.user.unwrap_or("err".to_owned())
+                    );
                 }
                 Idle => {}
             }
@@ -69,19 +68,20 @@ impl ConnectionTable {
         let Some(conn_data) = self.connections.get_mut(conn) else { return false; };
         use GameStatus::*;
         match conn_data.status {
-            Pacman => {
+            Pacman(_) => {
                 log::info!("Pacman (host) is being kicked. Kicking everyone from the game.");
                 self.kick_all();
                 true
             }
             Ghost => {
-                log::info!("Kicking connection {conn:?} with user {user} from the game.", user = conn_data.user.unwrap_or("err".to_owned()));
+                log::info!(
+                    "Kicking connection {conn:?} with user {user} from the game.",
+                    user = conn_data.user.unwrap_or("err".to_owned())
+                );
                 conn_data.status = GameStatus::Idle;
                 true
             }
-            Idle => {
-                false
-            }
+            Idle => false,
         }
     }
 
@@ -109,10 +109,7 @@ impl ConnectionTable {
     }
 
     #[must_use]
-    pub fn get(
-        &mut self,
-        connection: &Connection,
-    ) -> Option<&ConnectionData> {
+    pub fn get(&mut self, connection: &Connection) -> Option<&ConnectionData> {
         self.connections.get(connection)
     }
 
@@ -122,10 +119,13 @@ impl ConnectionTable {
             false
         } else {
             log::info!("Connection added: {conn:?}");
-            self.connections.insert(conn.clone(), ConnectionData{
-                user: None,
-                status: GameStatus::Idle,
-            });
+            self.connections.insert(
+                conn.clone(),
+                ConnectionData {
+                    user: None,
+                    status: GameStatus::Idle,
+                },
+            );
             true
         }
     }
@@ -149,7 +149,7 @@ pub fn run(port: u16) {
                 break;
             }
         };
-        let (conn, msg) = if let PacmanMessage::ClientServer(ClientServerMessage {
+        let (conn, msg) = if let PacmanMessage::ClientServer(client_server::Message {
             connection: conn,
             message: msg,
         }) = msg
@@ -160,8 +160,8 @@ pub fn run(port: u16) {
             continue;
         };
 
-        use ClientServerMessageEnum::*;
         match msg {
+            _ => todo!(),
         }
     }
 }

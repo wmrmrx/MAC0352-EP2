@@ -5,9 +5,9 @@ use std::{
     time::Duration,
 };
 
-use pacman_communication::PacmanMessage;
+use pacman_communication::{client_server, PacmanMessage};
 
-pub fn start(port: u16, send: Sender<PacmanMessage>) {
+pub fn start(port: u16, send: Sender<client_server::Message>) {
     const TICK: Duration = Duration::from_millis(1);
     {
         // Udp Listener
@@ -17,9 +17,9 @@ pub fn start(port: u16, send: Sender<PacmanMessage>) {
             let listener = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port)).unwrap();
             loop {
                 match listener.recv(&mut buf) {
-                    Ok(bytes) => {
-                        let buf = &buf[0..bytes];
-                        send.send(PacmanMessage::from_bytes(buf)).unwrap();
+                    Ok(amt) => {
+                        let Ok(msg) = PacmanMessage::from_bytes(&buf[..amt]) else { continue; };
+                        send.send(msg).unwrap();
                     }
                     Err(err) => {
                         if err.kind() != std::io::ErrorKind::WouldBlock {
@@ -43,7 +43,9 @@ pub fn start(port: u16, send: Sender<PacmanMessage>) {
                             let mut buf = [0; 9001];
                             loop {
                                 let Ok(amt) = stream.read(&mut buf) else { break; };
-                                send.send(PacmanMessage::from_bytes(&buf[..amt]));
+                                if let Ok(msg) = PacmanMessage::from_bytes(&buf[..amt]) {
+                                    send.send(msg).unwrap();
+                                }
                             }
                         });
                     }

@@ -7,10 +7,7 @@ use log4rs::{
     config::{Appender, Root},
     Config,
 };
-use std::{
-    path::{Path, PathBuf},
-    sync::{atomic::AtomicBool, Arc},
-};
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]

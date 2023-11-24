@@ -1,9 +1,9 @@
 //! Specifies the binary format and types for communication
 //! In this module are things relevant to both the client and server
 
-pub mod server_client;
-pub mod client_server;
 pub mod client_client;
+pub mod client_server;
+pub mod server_client;
 
 use std::{
     io::Write,
@@ -20,12 +20,11 @@ pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(300);
 #[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Connection {
     Udp(SocketAddr),
-    Tcp(SocketAddr),
+    Tcp(SocketAddr), // Using TCP just like UDP for simplicity
 }
 
 impl Connection {
-    pub fn send<T: Into<PacmanMessage>>(&self, msg: T) {
-        let msg: PacmanMessage = msg.into();
+    pub fn send<T: PacmanMessage>(&self, msg: T) {
         match self {
             Connection::Udp(addr) => {
                 let socket = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap();
@@ -59,52 +58,61 @@ impl Direction {
     }
 }
 
-
 #[derive(Serialize, Deserialize)]
 pub struct Peer {
     user: String,
-    connection: crate::Connection
+    connection: crate::Connection,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct LeaderboardEntry {
     user: String,
-    score: u64
+    score: u64,
 }
 
-#[derive(Serialize, Deserialize)]
-pub enum PacmanMessage {
-    ServerClient(server_client::Message),
-    ClientServer(client_server::Message),
-    ClientClient(client_client::Message),
-    Error
+pub trait PacmanMessage: Sized {
+    fn to_bytes(&self) -> Box<[u8]>;
+    fn from_bytes(bytes: &[u8]) -> Result<Self, ()>;
 }
 
-impl PacmanMessage {
-    pub fn to_bytes(&self) -> Box<[u8]> {
-        serde_json::to_string(self).unwrap().into_bytes().into_boxed_slice()
+impl PacmanMessage for server_client::Message {
+    fn to_bytes(&self) -> Box<[u8]> {
+        serde_json::to_string(self)
+            .unwrap()
+            .into_bytes()
+            .into_boxed_slice()
     }
-    pub fn from_bytes(bytes: &[u8]) -> Self {
-        let Ok(string) = std::str::from_utf8(bytes) else { return Self::Error; };
-        let Ok(res) = serde_json::from_str(string) else { return Self::Error; };
+    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
+        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
+        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
         res
     }
 }
 
-impl From<server_client::Message> for PacmanMessage {
-    fn from(value: server_client::Message) -> PacmanMessage {
-        PacmanMessage::ServerClient(value)
+impl PacmanMessage for client_server::Message {
+    fn to_bytes(&self) -> Box<[u8]> {
+        serde_json::to_string(self)
+            .unwrap()
+            .into_bytes()
+            .into_boxed_slice()
+    }
+    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
+        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
+        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
+        res
     }
 }
 
-impl From<client_server::Message> for PacmanMessage {
-    fn from(value: client_server::Message) -> PacmanMessage {
-        PacmanMessage::ClientServer(value)
+impl PacmanMessage for client_client::Message {
+    fn to_bytes(&self) -> Box<[u8]> {
+        serde_json::to_string(self)
+            .unwrap()
+            .into_bytes()
+            .into_boxed_slice()
     }
-}
-
-impl From<client_client::Message> for PacmanMessage {
-    fn from(value: client_client::Message) -> PacmanMessage {
-        PacmanMessage::ClientClient(value)
+    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
+        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
+        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
+        res
     }
 }

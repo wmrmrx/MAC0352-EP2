@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use crate::Peer;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub enum Message {
@@ -12,25 +12,25 @@ pub enum Message {
     JoinPartyResponse(JoinPartyResponse),
     ConnectedUsersResponse(ConnectedUsersResponse),
     LeaderboardResponse(LeaderboardResponse),
-    NotConnected
+    NotConnected,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum CreateUserResponse {
     Ok,
-    Err
+    Err,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum LoginResponse {
     Ok,
-    Err
+    Err,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum ChangePasswordResponse {
     Ok,
-    Err
+    Err,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -42,16 +42,16 @@ pub struct ConnectedUsersResponse {
 #[derive(Serialize, Deserialize)]
 pub enum CreatePartyResponse {
     Ok,
-    Err
+    Err,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum JoinPartyResponse {
     Ok,
-    Err
+    Err,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct LeaderboardResponse {
-    top10: Box<[crate::LeaderboardEntry]>
+    top10: Box<[crate::LeaderboardEntry]>,
 }

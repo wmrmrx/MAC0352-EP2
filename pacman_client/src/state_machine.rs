@@ -1,7 +1,6 @@
-use pacman_communication::Connection;
+use std::sync::mpsc::Receiver;
 
-use crate::publisher::Publisher;
+use pacman_communication::{server_client, Connection};
 
 /// Conn is the address from which we listen to new messages
-pub fn run(server: Connection, conn: Connection, publisher: Publisher) {
-}
+pub fn run(server: Connection, listener: Connection, recv: Receiver<server_client::Message>) {}
