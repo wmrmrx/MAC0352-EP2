@@ -1,5 +1,4 @@
-pub mod database;
-pub mod server;
+mod server;
 
 use clap::Parser;
 use log::LevelFilter;
@@ -54,7 +53,6 @@ fn main() {
 
     loop {
         log::info!("Starting new game");
-        let keep_running = Arc::new(AtomicBool::new(true));
-        server::run(args.port, keep_running);
+        server::run(args.port);
     }
 }
