@@ -52,7 +52,7 @@ impl Database {
     }
 
     /// Returns true if successful, false otherwise
-    pub fn change_password(&self, user: &str, old_passwd: &str, new_passwd: &str) -> bool {
+    pub fn change_password(&mut self, user: &str, old_passwd: &str, new_passwd: &str) -> bool {
         if let Some(mut file) = self.open_user_file(&user) {
             let mut cur_passwd = String::new();
             let _ = file.read_to_string(&mut cur_passwd).unwrap();

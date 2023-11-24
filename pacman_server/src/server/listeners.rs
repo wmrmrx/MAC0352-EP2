@@ -1,13 +1,15 @@
+//! Defines the listener
 use std::{
     io::Read,
     net::{Ipv4Addr, SocketAddrV4, TcpListener, UdpSocket},
-    sync::mpsc::Sender,
+    sync::mpsc::{channel, Receiver},
     time::Duration,
 };
 
 use pacman_communication::{client_server, PacmanMessage};
 
-pub fn start(port: u16, send: Sender<client_server::Message>) {
+pub fn start(port: u16) -> Receiver<client_server::Message> {
+    let (send, recv) = channel();
     const TICK: Duration = Duration::from_millis(1);
     {
         // Udp Listener
@@ -32,7 +34,6 @@ pub fn start(port: u16, send: Sender<client_server::Message>) {
     }
     {
         std::thread::spawn(move || {
-            let mut buf = [0; 9001];
             let listener =
                 TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port)).unwrap();
             for stream in listener.incoming() {
@@ -56,4 +57,5 @@ pub fn start(port: u16, send: Sender<client_server::Message>) {
             }
         });
     }
+    recv
 }

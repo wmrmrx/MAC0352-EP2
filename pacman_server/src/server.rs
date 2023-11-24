@@ -1,4 +1,5 @@
 mod database;
+mod heartbeat;
 mod listeners;
 
 use std::{
@@ -114,7 +115,7 @@ impl ConnectionTable {
     }
 
     // Returns true if the connection was inserted, false if it already existed
-    fn insert(&self, conn: &Connection) -> bool {
+    fn insert(&mut self, conn: &Connection) -> bool {
         if let Some(_) = self.connections.get(conn) {
             false
         } else {
@@ -138,9 +139,7 @@ pub fn run(port: u16) {
 
     // UDP and TCP listeners are abstracted into the same interface, where both of them send messages
     // received through this channel
-    let (send, recv) = channel();
-
-    listeners::start(port, send.clone());
+    let recv = listeners::start(port);
     loop {
         let msg = match recv.recv() {
             Ok(msg) => msg,
@@ -149,16 +148,10 @@ pub fn run(port: u16) {
                 break;
             }
         };
-        let (conn, msg) = if let PacmanMessage::ClientServer(client_server::Message {
+        let client_server::Message {
             connection: conn,
             message: msg,
-        }) = msg
-        {
-            (conn, msg)
-        } else {
-            eprintln!("Server received message not meant for it!");
-            continue;
-        };
+        } = msg;
 
         match msg {
             _ => todo!(),
