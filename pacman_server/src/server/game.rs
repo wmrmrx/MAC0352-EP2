@@ -101,7 +101,7 @@ impl ConnectionTable {
 
     // Returns true if the connection was inserted, false if it already existed
     pub fn insert(&mut self, conn: &Connection) -> bool {
-        if let Some(_) = self.connections.get(conn) {
+        if self.connections.get(conn).is_some() {
             false
         } else {
             log::info!("Connection added: {conn:?}");

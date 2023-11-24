@@ -4,27 +4,20 @@ mod heartbeat;
 mod listeners;
 
 use std::{
-    collections::{BTreeMap, BTreeSet},
-    io::Read,
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpListener, UdpSocket},
-    sync::{
-        mpsc::{channel, Sender},
-        Arc, Mutex,
-    },
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use database::Database;
-use pacman_communication::{client_server, server_client, Connection, PacmanMessage};
+use pacman_communication::{client_server};
 
 fn current_time() -> Duration {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
 }
 
 pub fn run(port: u16) {
-    let database = Database::new();
+    let _database = Database::new();
 
-    let conn_table = game::ConnectionTable::new();
+    let _conn_table = game::ConnectionTable::new();
 
     // UDP and TCP listeners are abstracted into the same interface, where both of them send messages
     // received through this channel
@@ -38,12 +31,10 @@ pub fn run(port: u16) {
             }
         };
         let client_server::Message {
-            connection: conn,
+            connection: _conn,
             message: msg,
         } = msg;
 
-        match msg {
-            _ => todo!(),
-        }
+        todo!()
     }
 }

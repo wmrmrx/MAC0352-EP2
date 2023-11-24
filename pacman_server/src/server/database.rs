@@ -18,10 +18,10 @@ impl Database {
     }
 
     fn open_user_file(&mut self, user: &str) -> Option<File> {
-        if let Ok(file) = File::open(&user_file_path(user)) {
-            return Some(file);
+        if let Ok(file) = File::open(user_file_path(user)) {
+            Some(file)
         } else {
-            return None;
+            None
         }
     }
 
@@ -31,10 +31,10 @@ impl Database {
 
     /// Returns true if created, false if otherwise
     pub fn create_user(&mut self, user: &str, password: &str) -> bool {
-        if self.user_exists(&user) {
+        if self.user_exists(user) {
             false
         } else {
-            let mut file = File::create(&format!("users/{user}")).unwrap();
+            let mut file = File::create(format!("users/{user}")).unwrap();
             file.write_all(password.as_bytes()).unwrap();
             true
         }
@@ -42,7 +42,7 @@ impl Database {
 
     /// Returns true if successful, false otherwise
     pub fn login(&mut self, user: &str, passwd: &str) -> bool {
-        if let Some(mut file) = self.open_user_file(&user) {
+        if let Some(mut file) = self.open_user_file(user) {
             let mut cur_passwd = String::new();
             let _ = file.read_to_string(&mut cur_passwd).unwrap();
             passwd == cur_passwd
@@ -53,12 +53,12 @@ impl Database {
 
     /// Returns true if successful, false otherwise
     pub fn change_password(&mut self, user: &str, old_passwd: &str, new_passwd: &str) -> bool {
-        if let Some(mut file) = self.open_user_file(&user) {
+        if let Some(mut file) = self.open_user_file(user) {
             let mut cur_passwd = String::new();
             let _ = file.read_to_string(&mut cur_passwd).unwrap();
             if old_passwd == cur_passwd {
-                let mut file = File::create(&user_file_path(user)).unwrap();
-                let _ = file.write_all(new_passwd.as_bytes()).unwrap();
+                let mut file = File::create(user_file_path(user)).unwrap();
+                file.write_all(new_passwd.as_bytes()).unwrap();
                 true
             } else {
                 false
