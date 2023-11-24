@@ -24,17 +24,17 @@ pub enum MessageEnum {
 #[derive(Serialize, Deserialize)]
 pub struct CreateUserRequest {
     pub user: String,
-    pub password: String,
+    pub passwd: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LoginRequest {
     pub user: String,
-    pub password: String,
+    pub passwd: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ChangePasswordRequest {
-    pub old_password: String,
-    pub new_password: String,
+    pub old_passwd: String,
+    pub new_passwd: String,
 }

@@ -14,8 +14,8 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-pub const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(33);
-pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(300);
+pub const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(100);
+pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(1000);
 
 /// Each connection has a listener
 #[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
@@ -29,11 +29,11 @@ impl Connection {
         match self {
             Connection::Udp(addr) => {
                 let socket = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap();
-                socket.send_to(&msg.to_bytes(), addr).unwrap();
+                let _ = socket.send_to(&msg.to_bytes(), addr);
             }
             Connection::Tcp(addr) => {
                 let mut stream = TcpStream::connect(addr).unwrap();
-                let _ = stream.write(&msg.to_bytes()).unwrap();
+                let _ = stream.write(&msg.to_bytes());
             }
         }
     }

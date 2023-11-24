@@ -1,5 +1,7 @@
 use pacman_communication::Connection;
-use std::{collections::BTreeMap, net::SocketAddr};
+use std::{collections::BTreeMap, net::SocketAddr, time::Duration};
+
+use super::current_time;
 
 #[derive(Clone, PartialEq)]
 pub enum GameStatus {
@@ -12,6 +14,7 @@ pub enum GameStatus {
 pub struct ConnectionData {
     pub user: Option<String>,
     pub status: GameStatus,
+    pub last_heartbeat: Duration,
 }
 
 pub struct ConnectionTable {
@@ -28,6 +31,18 @@ impl ConnectionTable {
             users: BTreeMap::new(),
             party: Vec::new(),
         }
+    }
+
+    pub fn get_connections(&self) -> &BTreeMap<Connection, ConnectionData> {
+        &self.connections
+    }
+
+    pub fn get_users(&self) -> &BTreeMap<String, Connection> {
+        &self.users
+    }
+
+    pub fn get_party(&self) -> &[Connection] {
+        &self.party
     }
 
     fn kick_all(&mut self) {
@@ -110,14 +125,16 @@ impl ConnectionTable {
                 ConnectionData {
                     user: None,
                     status: GameStatus::Idle,
+                    last_heartbeat: current_time(),
                 },
             );
             true
         }
     }
 
-    #[must_use]
-    pub fn get(&mut self, connection: &Connection) -> Option<&ConnectionData> {
-        self.connections.get(connection)
+    pub fn set_heartbeat(&mut self, conn: &Connection) {
+        if let Some(conn_data) = self.connections.get_mut(conn) {
+            conn_data.last_heartbeat = current_time();
+        }
     }
 }

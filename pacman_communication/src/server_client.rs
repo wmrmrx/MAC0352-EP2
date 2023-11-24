@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub enum Message {
+    Heartbeat,
     ConnectResponse,
     CreateUserResponse(CreateUserResponse),
     LoginResponse(LoginResponse),
@@ -34,7 +35,7 @@ pub enum ChangePasswordResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct ConnectedUsersResponse {
-    pub users: Box<[String]>
+    pub users: Box<[String]>,
 }
 
 #[derive(Serialize, Deserialize)]

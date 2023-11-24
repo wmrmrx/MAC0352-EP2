@@ -10,7 +10,6 @@ use pacman_communication::{client_server, PacmanMessage};
 
 pub fn start(port: u16) -> Receiver<client_server::Message> {
     let (send, recv) = channel();
-    const TICK: Duration = Duration::from_millis(1);
     {
         // Udp Listener
         let send = send.clone();
