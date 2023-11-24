@@ -1,8 +1,9 @@
 //! Specifies the binary format and types for communication
 //! In this module are things relevant to both the client and server
 
-pub mod client_client;
 pub mod client_server;
+pub mod ghost_pacman;
+pub mod pacman_ghost;
 pub mod server_client;
 
 use std::{
@@ -59,12 +60,6 @@ impl Direction {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Peer {
-    user: String,
-    connection: crate::Connection,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct LeaderboardEntry {
     user: String,
     score: u64,
@@ -103,7 +98,21 @@ impl PacmanMessage for client_server::Message {
     }
 }
 
-impl PacmanMessage for client_client::Message {
+impl PacmanMessage for pacman_ghost::Message {
+    fn to_bytes(&self) -> Box<[u8]> {
+        serde_json::to_string(self)
+            .unwrap()
+            .into_bytes()
+            .into_boxed_slice()
+    }
+    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
+        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
+        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
+        res
+    }
+}
+
+impl PacmanMessage for ghost_pacman::Message {
     fn to_bytes(&self) -> Box<[u8]> {
         serde_json::to_string(self)
             .unwrap()

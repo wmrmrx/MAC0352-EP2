@@ -22,7 +22,7 @@ fn current_time() -> Duration {
 
 #[derive(Clone, PartialEq)]
 enum GameStatus {
-    Pacman(SocketAddr),
+    Pacman(SocketAddr), // Pacman must have a TCPListener in this address
     Ghost,
     Idle,
 }
@@ -55,7 +55,7 @@ impl ConnectionTable {
                     conn_data.status = GameStatus::Idle;
                     log::info!(
                         "Kicking connection {conn:?} with user {user} from the game.",
-                        user = conn_data.user.unwrap_or("err".to_owned())
+                        user = conn_data.user.clone().unwrap_or("err".to_owned())
                     );
                 }
                 Idle => {}
@@ -77,7 +77,7 @@ impl ConnectionTable {
             Ghost => {
                 log::info!(
                     "Kicking connection {conn:?} with user {user} from the game.",
-                    user = conn_data.user.unwrap_or("err".to_owned())
+                    user = conn_data.user.clone().unwrap_or("err".to_owned())
                 );
                 conn_data.status = GameStatus::Idle;
                 true
@@ -86,12 +86,12 @@ impl ConnectionTable {
         }
     }
 
-    fn logout(&mut self, conn: &Connection) -> bool {
+    pub fn logout(&mut self, conn: &Connection) -> bool {
         self.kick(conn);
         let Some(conn_data) = self.connections.get_mut(conn) else { return false; };
-        if let Some(user) = conn_data.user {
+        if let Some(user) = conn_data.user.as_ref() {
             log::info!("User {user} with connection {conn:?} logging out");
-            self.users.remove(&user);
+            self.users.remove(user);
             conn_data.user = None;
             true
         } else {
@@ -100,7 +100,7 @@ impl ConnectionTable {
     }
 
     // Returns true if the connection was removed
-    fn remove(&mut self, conn: &Connection) -> bool {
+    pub fn remove(&mut self, conn: &Connection) -> bool {
         self.logout(conn);
         let res = self.connections.remove(conn).is_some();
         if res {
@@ -109,13 +109,8 @@ impl ConnectionTable {
         res
     }
 
-    #[must_use]
-    pub fn get(&mut self, connection: &Connection) -> Option<&ConnectionData> {
-        self.connections.get(connection)
-    }
-
     // Returns true if the connection was inserted, false if it already existed
-    fn insert(&mut self, conn: &Connection) -> bool {
+    pub fn insert(&mut self, conn: &Connection) -> bool {
         if let Some(_) = self.connections.get(conn) {
             false
         } else {
@@ -129,6 +124,11 @@ impl ConnectionTable {
             );
             true
         }
+    }
+
+    #[must_use]
+    pub fn get(&mut self, connection: &Connection) -> Option<&ConnectionData> {
+        self.connections.get(connection)
     }
 }
 

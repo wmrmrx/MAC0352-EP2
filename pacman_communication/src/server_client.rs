@@ -1,4 +1,5 @@
-use crate::Peer;
+use std::net::SocketAddr;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -35,8 +36,8 @@ pub enum ChangePasswordResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct ConnectedUsersResponse {
-    pub pacman: Peer,
-    pub ghosts: Vec<Peer>,
+    pub pacman: (String, SocketAddr),
+    pub ghosts: String,
 }
 
 #[derive(Serialize, Deserialize)]
