@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 pacman_communication = { path = "../pacman_communication" }
 clap = { version = "4.4.8", features = ["derive"] }
+thiserror = "1.0.50"

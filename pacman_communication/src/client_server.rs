@@ -12,6 +12,7 @@ pub struct Message {
 #[derive(Serialize, Deserialize)]
 pub enum MessageEnum {
     ConnectRequest,
+    Disconnect,
     Heartbeat,
     CreateUserRequest(CreateUserRequest),
     LoginRequest(LoginRequest),

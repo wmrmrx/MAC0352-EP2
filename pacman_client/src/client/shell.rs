@@ -1,13 +1,19 @@
 use std::{fs::read_to_string, io::BufRead};
 
+use pacman_communication::client_server::{LoginRequest, Message, MessageEnum};
+use pacman_communication::server_client::{LoginResponse, Message as ServerMessage};
+
+use super::event::watch;
+use super::CommonInfo;
+
 pub struct Shell {
     allowed_commands: Vec<String>,
 }
 
 impl Shell {
-    pub fn new<T: ToString>(allowed_commands: impl Iterator<Item = T>) -> Self {
+    pub fn new<T: ToString>(allowed_commands: &[T]) -> Self {
         Shell {
-            allowed_commands: allowed_commands.map(|s| s.to_string()).collect(),
+            allowed_commands: allowed_commands.iter().map(|s| s.to_string()).collect(),
         }
     }
 
@@ -42,7 +48,7 @@ impl Shell {
             let mut line = String::new();
             let _ = lock.read_line(&mut line).unwrap();
             let tokens: Vec<String> = line.split_whitespace().map(|s| s.to_owned()).collect();
-            if tokens.len() == 0 {
+            if tokens.is_empty() {
                 continue;
             }
             let command = &tokens[0];
@@ -145,6 +151,19 @@ impl Shell {
                     return Vec::new();
                 }
             }
+        }
+    }
+
+    pub fn login(&self, info: &CommonInfo, user: String, passwd: String) -> bool {
+        info.server.send(Message {
+            connection: info.connection.clone(),
+            message: MessageEnum::LoginRequest(LoginRequest { user, passwd }),
+        });
+        match watch(&info.recv, |msg| -> bool {
+            matches!(msg, ServerMessage::LoginResponse(_))
+        }) {
+            Ok(_) => todo!(),
+            Err(_) => todo!(),
         }
     }
 }

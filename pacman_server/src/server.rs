@@ -53,6 +53,10 @@ pub fn run(port: u16) {
                 let mut conn_table = conn_table.lock().unwrap();
                 conn_table.set_heartbeat(&conn);
             }
+            Disconnect => {
+                let mut conn_table = conn_table.lock().unwrap();
+                conn_table.remove(&conn);
+            }
             CreateUserRequest(req) => {
                 if database.create_user(&req.user, &req.passwd) {
                     log::info!("Created user {}", &req.user);

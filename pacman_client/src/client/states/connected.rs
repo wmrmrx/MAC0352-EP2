@@ -1,50 +1,73 @@
-use std::{time::Duration, sync::mpsc::RecvTimeoutError};
+use std::{sync::mpsc::RecvTimeoutError, time::Duration};
 
 use pacman_communication::{
     client_server::{Message, MessageEnum},
-    server_client::Message as ServerMessage, current_time
+    current_time,
+    server_client::Message as ServerMessage,
+};
+
+use crate::client::{
+    event::{watch, WatchErr},
+    states::idle::Idle,
+    CommonInfo,
 };
 
 use super::*;
 
 pub struct Connected {
-    info: CommonInfo
+    info: CommonInfo,
 }
 
 impl Connected {
-    pub fn new(server: Connection, connection: Connection, mut recv: Receiver<ServerMessage>, keep_running: Arc<AtomicBool>) -> Option<Self> {
+    pub fn new(
+        server: Connection,
+        connection: Connection,
+        mut recv: Receiver<ServerMessage>,
+        keep_running: Arc<AtomicBool>,
+    ) -> Option<Self> {
         server.send(Message {
             connection: connection.clone(),
-            message: MessageEnum::ConnectRequest
+            message: MessageEnum::ConnectRequest,
         });
-        // 10 seconds for timeout
-        let timeout = Duration::from_secs(10);
-        let start = current_time();
-        loop {
-            if current_time() - start > timeout {
-                break;
+        match watch(&recv, |msg| -> bool {
+            matches!(msg, ServerMessage::ConnectResponse)
+        }) {
+            Ok(_) => {
+                recv = heartbeat::setup(
+                    server.clone(),
+                    connection.clone(),
+                    recv,
+                    keep_running.clone(),
+                );
+                Some(Self {
+                    info: CommonInfo {
+                        server,
+                        connection,
+                        recv,
+                        keep_running,
+                    },
+                })
             }
-            match recv.recv_timeout(RECV_TIMEOUT) {
-                Ok(message) => {
-                    if let ServerMessage::ConnectResponse = message {
-                        recv = heartbeat::setup(server.clone(), connection.clone(), recv, keep_running.clone());
-                        let connected_client = Connected {
-                            info: CommonInfo { server, connection, recv, keep_running }
-                        };
-                        return Some(connected_client);
-                    }
-                }
-                Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => {
-                    break;
-                }
-            }
+            Err(_) => None,
         }
-        None
     }
 
     pub fn run(self) {
         println!(">>> CONECTADO AO SERVIDOR COM SUCESSO!");
-        let commands = ["novo", "senha", "entra", "lideres"];
+        let commands = ["novo", "senha", "entra", "lideres", "l", "tchau"];
+        let shell = Shell::new(&commands);
+        loop {
+            let command = shell.prompt();
+            match command[0].as_str() {
+                "novo" => {
+                    let (user, passwd) = (&command[1], &command[2]);
+                    if shell.login(&self.info, user.to_owned(), passwd.to_owned()) {
+                        let idle_client = Idle::new(self.info);
+                        return idle_client.run();
+                    }
+                }
+                _ => todo!(),
+            }
+        }
     }
 }
