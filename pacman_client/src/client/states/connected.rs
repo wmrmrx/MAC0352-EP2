@@ -1,9 +1,9 @@
 use std::{sync::mpsc::RecvTimeoutError, time::Duration};
 
 use pacman_communication::{
-    client_server::{LoginRequest, Message, MessageEnum},
+    client_server::{LoginRequest, Message, MessageEnum, CreateUserRequest},
     current_time,
-    server_client::Message as ServerMessage,
+    server_client::{Message as ServerMessage, LeaderboardResponse},
 };
 
 use crate::client::{
@@ -54,12 +54,36 @@ impl Connected {
 
     pub fn run(self) {
         println!(">>> CONECTADO AO SERVIDOR COM SUCESSO!");
-        let commands = ["novo", "senha", "entra", "lideres", "l", "tchau"];
+        let commands = ["novo", "entra", "lideres", "l", "tchau"];
         let shell = Shell::new(&commands);
         loop {
             let command = shell.prompt();
             match command[0].as_str() {
                 "novo" => {
+                    let (user, passwd) = (&command[1], &command[2]);
+                    self.info.server.send(Message {
+                        connection: self.info.connection.clone(),
+                        message: MessageEnum::CreateUserRequest(CreateUserRequest{
+                            user: user.to_owned(),
+                            passwd: passwd.to_owned(),
+                        }),
+                    });
+                    match watch(&self.info.recv, |msg| -> bool {
+                        matches!(msg, ServerMessage::CreateUserResponse(_))
+                    }) {
+                        Ok(msg) => {
+                            if let ServerMessage::CreateUserResponse(server_client::CreateUserResponse::Err) = msg {
+                                println!("Erro ao criar usuário (talvez ele já exista");
+                            }
+                        }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                            continue;
+                        }
+                        Err(WatchErr::Disconnection) => return,
+                    }
+                }
+                "entra" => {
                     let (user, passwd) = (&command[1], &command[2]);
 
                     self.info.server.send(Message {
@@ -89,7 +113,29 @@ impl Connected {
                     let idle_client = Idle::new(self.info);
                     return idle_client.run();
                 }
-                _ => todo!(),
+                "lideres" => {
+                    self.info.server.send(Message {
+                        connection: self.info.connection.clone(),
+                        message: MessageEnum::LeaderboardRequest
+                    });
+                    match watch(&self.info.recv, |msg| -> bool {
+                        matches!(msg, ServerMessage::LeaderboardResponse(_))
+                    }) {
+                        Ok(msg) => {
+                            let ServerMessage::LeaderboardResponse(LeaderboardResponse{top10}) = msg else { unreachable!() };
+                            println!("Lideres: {top10:?}");
+                        }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                            continue;
+                        }
+                        Err(WatchErr::Disconnection) => return,
+                    }
+                }
+                "l" => {
+                    todo!()
+                }
+                _ => unreachable!()
             }
         }
     }

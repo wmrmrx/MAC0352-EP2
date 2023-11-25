@@ -63,7 +63,7 @@ impl Direction {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct LeaderboardEntry {
     score: u64,
     user: String,
