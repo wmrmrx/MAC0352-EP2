@@ -1,25 +1,24 @@
 pub mod heartbeat;
 mod states;
 
-use std::{sync::{mpsc::Receiver, Arc, atomic::AtomicBool}};
+use std::{sync::{mpsc::Receiver, Arc, atomic::AtomicBool, Mutex}, time::Duration};
 
 use pacman_communication::{server_client, Connection};
 
 // Common info needed for all states
-pub struct Info {
+pub struct CommonInfo {
     pub server: Connection,
     pub connection: Connection,
     pub recv: Receiver<server_client::Message>,
     pub keep_running: Arc<AtomicBool>,
+    pub last_heartbeat: Arc<Mutex<Duration>>
 }
 
 pub fn run(server: Connection, connection: Connection, recv: Receiver<server_client::Message>, keep_running: Arc<AtomicBool>) {
-    // Start the state machine
-    let unconnected_client = states::Unconnected;
-    unconnected_client.try_connect(Info{
-        server,
-        connection,
-        recv,
-        keep_running,
-    }   );
+    if let Some(connected_client) = states::Connected::new(server, connection, recv, keep_running) {
+        println!("Connected to server!");
+        connected_client.run();
+    } else {
+        println!("Failed to connect to server!");
+    }
 }

@@ -1,42 +1,30 @@
-use std::time::Duration;
+pub mod connected;
 
-use pacman_communication::{
-    client_server::{Message, MessageEnum},
-    server_client::Message as ServerMessage
-};
+use std::time::Duration;
 
 use super::Info;
 
-const TICK: Duration = Duration::from_millis(33);
+pub use connected::Connected;
 
-pub struct Unconnected;
+const RECV_TIMEOUT: Duration= Duration::from_millis(33);
 
-impl Unconnected {
-    pub fn try_connect(self, info: Info) {
-        info.server.send(Message {
-            connection: info.connection.clone(),
-            message: MessageEnum::ConnectRequest
-        });
-        loop {
-            if let ServerMessage::ConnectResponse = info.recv.recv().unwrap {
-            }
-        }
-        println!("Couldn't connect!");
-    }
-}
 
-struct Connected;
-
+#[must_use]
 struct Idle {
 }
 
+#[must_use]
 struct Pacman;
 
+#[must_use]
 struct Ghost;
 
+trait ClientState {}
+
 trait IsConnected: Sized {
-    fn disconnect(self, info: Info) {
+    fn disconnect(self, _: Info) {
         println!("Disconnecting from server!");
+        drop(self);
     }
 }
 impl IsConnected for Connected {}
@@ -45,7 +33,7 @@ impl IsConnected for Idle {}
 impl IsConnected for Ghost {}
 
 trait IsLoggedIn: Sized + IsConnected {
-    fn logout(self, info: Info) {
+    fn logout(self, _: Info) {
     }
 }
 impl IsLoggedIn for Idle {}
