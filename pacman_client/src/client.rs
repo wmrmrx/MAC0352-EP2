@@ -1,7 +1,8 @@
 pub mod heartbeat;
+pub mod shell;
 mod states;
 
-use std::{sync::{mpsc::Receiver, Arc, atomic::AtomicBool, Mutex}, time::Duration};
+use std::sync::{mpsc::Receiver, Arc, atomic::AtomicBool};
 
 use pacman_communication::{server_client, Connection};
 

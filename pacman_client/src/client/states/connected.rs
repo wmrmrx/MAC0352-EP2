@@ -8,12 +8,11 @@ use pacman_communication::{
 use super::*;
 
 pub struct Connected {
-    info: CommonInfo // dummy field to make constructor private
+    info: CommonInfo
 }
 
-
 impl Connected {
-    pub fn new(server: Connection, connection: Connection, recv: Receiver<ServerMessage>, keep_running: Arc<AtomicBool>) -> Option<Self> {
+    pub fn new(server: Connection, connection: Connection, mut recv: Receiver<ServerMessage>, keep_running: Arc<AtomicBool>) -> Option<Self> {
         server.send(Message {
             connection: connection.clone(),
             message: MessageEnum::ConnectRequest
@@ -28,11 +27,11 @@ impl Connected {
             match recv.recv_timeout(RECV_TIMEOUT) {
                 Ok(message) => {
                     if let ServerMessage::ConnectResponse = message {
-                        // heartbeat::setup(server, recv);
-                        //let connected_client = Some(Connected {
-                        //    _dummy: ()
-                        //});
-                        //return connected_client;
+                        recv = heartbeat::setup(server.clone(), connection.clone(), recv, keep_running.clone());
+                        let connected_client = Connected {
+                            info: CommonInfo { server, connection, recv, keep_running }
+                        };
+                        return Some(connected_client);
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {}
@@ -45,5 +44,7 @@ impl Connected {
     }
 
     pub fn run(self) {
+        println!(">>> CONECTADO AO SERVIDOR COM SUCESSO!");
+        let commands = ["novo", "senha", "entra", "lideres"];
     }
 }

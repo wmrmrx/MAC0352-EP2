@@ -2,8 +2,9 @@ pub mod connected;
 
 pub use connected::Connected;
 
-use std::{sync::{mpsc::Receiver, Arc, atomic::AtomicBool, Mutex}, time::Duration};
+use std::{sync::{mpsc::Receiver, Arc, atomic::AtomicBool}, time::Duration};
 
+use super::heartbeat;
 use pacman_communication::{server_client, Connection};
 
 const RECV_TIMEOUT: Duration = Duration::from_millis(33);
@@ -14,7 +15,6 @@ pub struct CommonInfo {
     pub connection: Connection,
     pub recv: Receiver<server_client::Message>,
     pub keep_running: Arc<AtomicBool>,
-    pub last_heartbeat: Arc<Mutex<Duration>>
 }
 
 // #[must_use]

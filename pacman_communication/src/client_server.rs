@@ -46,7 +46,6 @@ pub struct CreateGameRequest {
     pub listener_addr: SocketAddr,
 }
 
-
 #[derive(Serialize, Deserialize)]
 pub struct JoinGameRequest {
     pub pacman: String,

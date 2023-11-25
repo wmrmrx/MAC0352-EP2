@@ -36,7 +36,7 @@ impl Connection {
                 let _ = socket.send_to(&msg.to_bytes(), addr);
             }
             Connection::Tcp(addr) => {
-                let mut stream = TcpStream::connect(addr).unwrap();
+                let Ok(mut stream) = TcpStream::connect(addr) else {return; };
                 let _ = stream.write(&msg.to_bytes());
             }
         }
