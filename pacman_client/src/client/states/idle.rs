@@ -10,5 +10,7 @@ impl Idle {
     pub fn new(info: CommonInfo) -> Self {
         Self { info }
     }
-    pub fn run(self) {}
+    pub fn run(self) {
+        todo!()
+    }
 }

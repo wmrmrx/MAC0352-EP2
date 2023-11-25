@@ -1,7 +1,7 @@
 use std::{sync::mpsc::RecvTimeoutError, time::Duration};
 
 use pacman_communication::{
-    client_server::{Message, MessageEnum},
+    client_server::{LoginRequest, Message, MessageEnum},
     current_time,
     server_client::Message as ServerMessage,
 };
@@ -61,10 +61,33 @@ impl Connected {
             match command[0].as_str() {
                 "novo" => {
                     let (user, passwd) = (&command[1], &command[2]);
-                    if shell.login(&self.info, user.to_owned(), passwd.to_owned()) {
-                        let idle_client = Idle::new(self.info);
-                        return idle_client.run();
+
+                    self.info.server.send(Message {
+                        connection: self.info.connection.clone(),
+                        message: MessageEnum::LoginRequest(LoginRequest {
+                            user: user.to_owned(),
+                            passwd: passwd.to_owned(),
+                        }),
+                    });
+                    match watch(&self.info.recv, |msg| -> bool {
+                        matches!(msg, ServerMessage::LoginResponse(_))
+                    }) {
+                        Ok(msg) => {
+                            if let ServerMessage::LoginResponse(server_client::LoginResponse::Err) =
+                                msg
+                            {
+                                println!("Login não aceito, talvez a senha ou o usuário podem estar errados");
+                                continue;
+                            }
+                        }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                            continue;
+                        }
+                        Err(WatchErr::Disconnection) => return,
                     }
+                    let idle_client = Idle::new(self.info);
+                    return idle_client.run();
                 }
                 _ => todo!(),
             }

@@ -153,17 +153,4 @@ impl Shell {
             }
         }
     }
-
-    pub fn login(&self, info: &CommonInfo, user: String, passwd: String) -> bool {
-        info.server.send(Message {
-            connection: info.connection.clone(),
-            message: MessageEnum::LoginRequest(LoginRequest { user, passwd }),
-        });
-        match watch(&info.recv, |msg| -> bool {
-            matches!(msg, ServerMessage::LoginResponse(_))
-        }) {
-            Ok(_) => todo!(),
-            Err(_) => todo!(),
-        }
-    }
 }

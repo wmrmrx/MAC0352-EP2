@@ -3,10 +3,9 @@ pub mod idle;
 
 pub use connected::Connected;
 
-use std::{
-    sync::{atomic::AtomicBool, mpsc::Receiver, Arc},
-    time::Duration,
-};
+use std::
+    sync::{atomic::AtomicBool, mpsc::Receiver, Arc}
+;
 
 use super::heartbeat;
 use super::shell::Shell;
