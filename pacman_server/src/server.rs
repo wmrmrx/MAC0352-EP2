@@ -16,16 +16,13 @@ use pacman_communication::{
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::server::game::GameStatus;
-pub fn current_time() -> Duration {
-    SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
-}
 
 pub fn run(port: u16) {
     let mut database = Database::new();
 
     let conn_table = Arc::new(Mutex::new(game::ConnectionTable::new()));
 
-    heartbeat::watch(conn_table.clone());
+    heartbeat::setup(conn_table.clone());
 
     // UDP and TCP listeners are abstracted into the same interface, where both of them send messages
     // received through this channel

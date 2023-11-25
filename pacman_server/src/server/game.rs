@@ -1,7 +1,5 @@
-use pacman_communication::Connection;
+use pacman_communication::{Connection, current_time};
 use std::{collections::BTreeMap, net::SocketAddr, time::Duration};
-
-use super::current_time;
 
 #[derive(Clone, PartialEq)]
 pub enum GameStatus {

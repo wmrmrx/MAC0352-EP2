@@ -9,19 +9,23 @@ pub mod server_client;
 use std::{
     io::Write,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpStream, UdpSocket},
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize};
 
-pub const HEARTBEAT_INTERVAL: Duration = Duration::from_millis(100);
-pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_millis(1000);
+pub const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(1);
+pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Each connection has a listener
 #[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Connection {
     Udp(SocketAddr),
     Tcp(SocketAddr), // Using TCP just like UDP for simplicity
+}
+
+pub fn current_time() -> Duration {
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
 }
 
 impl Connection {
