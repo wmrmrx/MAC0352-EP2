@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::{fs::read_to_string, io::BufRead};
 
 use pacman_communication::client_server::{LoginRequest, Message, MessageEnum};
@@ -23,7 +24,7 @@ impl Shell {
             println!(
                 "- {}",
                 match command.as_str() {
-                    "novo" => "novo <usario> <senha>",
+                    "novo" => "novo <usuario> <senha>",
                     "senha" => "senha <senha antiga> <senha nova>",
                     "entra" => "entra <usuario> <senha>",
                     "lideres" => "lideres",
@@ -42,9 +43,10 @@ impl Shell {
     }
 
     pub fn prompt(&self) -> Vec<String> {
-        let mut lock = std::io::stdin().lock();
         loop {
             print!("> ");
+            std::io::stdout().flush().unwrap();
+            let mut lock = std::io::stdin().lock();
             let mut line = String::new();
             let _ = lock.read_line(&mut line).unwrap();
             let tokens: Vec<String> = line.split_whitespace().map(|s| s.to_owned()).collect();
@@ -63,7 +65,7 @@ impl Shell {
                     if len == 3 {
                         Ok(())
                     } else {
-                        Err("novo <usario> <senha>")
+                        Err("novo <usuario> <senha>")
                     }
                 }
                 "senha" => {

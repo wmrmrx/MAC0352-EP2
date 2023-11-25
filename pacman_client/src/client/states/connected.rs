@@ -73,7 +73,9 @@ impl Connected {
                     }) {
                         Ok(msg) => {
                             if let ServerMessage::CreateUserResponse(server_client::CreateUserResponse::Err) = msg {
-                                println!("Erro ao criar usuário (talvez ele já exista");
+                                println!("Erro ao criar usuário (talvez ele já exista)");
+                            } else {
+                                println!("Usuario criado com sucesso!");
                             }
                         }
                         Err(WatchErr::Timeout) => {
@@ -110,7 +112,7 @@ impl Connected {
                         }
                         Err(WatchErr::Disconnection) => return,
                     }
-                    let idle_client = Idle::new(self.info);
+                    let idle_client = Idle::new(self.info, user.to_owned());
                     return idle_client.run();
                 }
                 "lideres" => {

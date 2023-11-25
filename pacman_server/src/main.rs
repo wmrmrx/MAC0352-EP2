@@ -46,10 +46,8 @@ fn main() {
         .unwrap();
     log4rs::init_config(config).unwrap();
 
-    log::info!("New server is initialized");
-
     loop {
-        log::info!("Starting new game");
+        log::info!("New server is initialized");
         server::run(args.port);
     }
 }

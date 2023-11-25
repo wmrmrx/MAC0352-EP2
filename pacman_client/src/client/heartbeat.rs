@@ -22,40 +22,42 @@ pub fn setup(
     recv: Receiver<Message>,
     keep_running: Arc<AtomicBool>,
 ) -> Receiver<Message> {
-    let (send, new_recv) = channel();
-    let keep_running_watcher = keep_running.clone();
-    std::thread::spawn(move || {
-        let mut last_heartbeat = current_time();
-        loop {
-            if current_time() - last_heartbeat > HEARTBEAT_TIMEOUT {
-                println!("Server heartbeat timeout!");
-                keep_running_watcher.store(false, Ordering::Relaxed);
-                return;
-            }
-            match recv.recv_timeout(RECV_TIMEOUT) {
-                Ok(msg) => {
-                    if let Message::Heartbeat = msg {
-                        last_heartbeat = current_time();
-                    } else {
-                        send.send(msg)
-                            .expect("Not expected for receiver channel to drop!");
-                    }
-                }
-                Err(RecvTimeoutError::Timeout) => {}
-                Err(RecvTimeoutError::Disconnected) => {
-                    return;
-                }
-            }
-        }
-    });
-    std::thread::spawn(move || {
-        while keep_running.load(Ordering::Relaxed) {
-            server.send(client_server::Message {
-                connection: connection.clone(),
-                message: MessageEnum::Heartbeat,
-            });
-            std::thread::sleep(HEARTBEAT_INTERVAL);
-        }
-    });
-    new_recv
+    // let (send, new_recv) = channel();
+    // let keep_running_watcher = keep_running.clone();
+    // etd::thread::spawn(move || {
+    //     let mut last_heartbeat = current_time();
+    //     loop {
+    //         if current_time() - last_heartbeat > HEARTBEAT_TIMEOUT {
+    //             println!("Server heartbeat timeout!");
+    //             keep_running_watcher.store(false, Ordering::Relaxed);
+    //             return;
+    //         }
+    //         match recv.recv_timeout(RECV_TIMEOUT) {
+    //             Ok(msg) => {
+    //                 if let Message::Heartbeat = msg {
+    //                     last_heartbeat = current_time();
+    //                 } else {
+    //                     send.send(msg)
+    //                         .expect("Not expected for receiver channel to drop!");
+    //                 }
+    //             }
+    //             Err(RecvTimeoutError::Timeout) => {}
+    //             Err(RecvTimeoutError::Disconnected) => {
+    //                 return;
+    //             }
+    //         }
+    //     }
+    // });
+    // std::thread::spawn(move || {
+    //     while keep_running.load(Ordering::Relaxed) {
+    //         server.send(client_server::Message {
+    //             connection: connection.clone(),
+    //             message: MessageEnum::Heartbeat,
+    //         });
+    //         std::thread::sleep(HEARTBEAT_INTERVAL);
+    //     }
+    // });
+    // new_recv
+    // TODO Enable heartbeat again
+    recv
 }

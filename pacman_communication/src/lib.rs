@@ -30,6 +30,7 @@ pub fn current_time() -> Duration {
 
 impl Connection {
     pub fn send<T: PacmanMessage>(&self, msg: T) {
+        dbg!("Sending", &msg);
         match self {
             Connection::Udp(addr) => {
                 let socket = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap();
@@ -69,7 +70,7 @@ pub struct LeaderboardEntry {
     user: String,
 }
 
-pub trait PacmanMessage: Sized {
+pub trait PacmanMessage: Sized + std::fmt::Debug {
     fn to_bytes(&self) -> Box<[u8]>;
     fn from_bytes(bytes: &[u8]) -> Result<Self, ()>;
 }
