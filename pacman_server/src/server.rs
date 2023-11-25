@@ -3,12 +3,19 @@ mod game;
 mod heartbeat;
 mod listeners;
 
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
 
 use database::Database;
-use pacman_communication::{client_server, server_client::{self, CreateUserResponse}};
+use pacman_communication::{
+    client_server,
+    server_client::{
+        self, ChangePasswordResponse, ConnectedUsersResponse, CreateUserResponse, LoginResponse, CreateGameResponse, JoinGameResponse,
+    },
+};
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use crate::server::game::GameStatus;
 pub fn current_time() -> Duration {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
 }
@@ -27,7 +34,7 @@ pub fn run(port: u16) {
         let msg = match recv.recv() {
             Ok(msg) => msg,
             Err(err) => {
-                log::error!("Error on recv: {err}");
+                eprintln!("Error on recv: {err}");
                 break;
             }
         };
@@ -61,17 +68,64 @@ pub fn run(port: u16) {
                 if database.login(&req.user, &req.passwd) {
                     let mut conn_table = conn_table.lock().unwrap();
                     if conn_table.login(&conn, &req.user) {
-                        log::info!("Created user {} with connection {:?}", &req.user, &conn);
+                        conn.send(Message::LoginResponse(LoginResponse::Ok));
+                        continue;
                     }
+                }
+                conn.send(Message::LoginResponse(LoginResponse::Err));
+            }
+            ChangePasswordRequest(req) => {
+                let conn_table = conn_table.lock().unwrap();
+                if let Some(conn_data) = conn_table.get_connections().get(&conn) {
+                    if let Some(user) = conn_data.user.as_ref() {
+                        if database.change_password(&user, &req.old_passwd, &req.new_passwd) {
+                            log::info!(
+                                "User {} with connection {:?} changed password",
+                                &user,
+                                &conn
+                            );
+                            conn.send(Message::ChangePasswordResponse(ChangePasswordResponse::Ok));
+                            continue;
+                        }
+                    }
+                }
+                conn.send(Message::ChangePasswordResponse(ChangePasswordResponse::Err));
+            }
+            LogoutRequest => {
+                let mut conn_table = conn_table.lock().unwrap();
+                if let Some(conn_data) = conn_table.get_connections().get(&conn).cloned() {
+                    if let Some(user) = conn_data.user.as_ref().cloned() {
+                        if conn_table.logout(&conn) {
+                            log::info!("User {} with connection {:?} has logout", &user, &conn);
+                            conn.send(Message::LogoutResponse);
+                        }
+                    }
+                }
 
+            }
+            ConnectedUsersRequest => {
+                let conn_table = conn_table.lock().unwrap();
+                let users: Box<[String]> = conn_table.get_users().keys().cloned().collect();
+                conn.send(Message::ConnectedUsersResponse(ConnectedUsersResponse {
+                    users,
+                }));
+            }
+            CreateGameRequest(req) => {
+                let mut conn_table = conn_table.lock().unwrap();
+                if conn_table.create_game(&conn, req.listener_addr) {
+                    conn.send(Message::CreateGameResponse(CreateGameResponse::Ok));
                 } else {
+                    conn.send(Message::CreateGameResponse(CreateGameResponse::Err));
                 }
             }
-            ChangePasswordRequest(req) => {}
-            LogoutRequest => {}
-            ConnectedUsersRequest => {}
-            CreatePartyRequest => {}
-            JoinPartyRequest => {}
+            JoinGameRequest(req) => {
+                let mut conn_table = conn_table.lock().unwrap();
+                if let Some(addr) = conn_table.join_game(&conn, &req.pacman) {
+                    conn.send(Message::JoinGameResponse(JoinGameResponse::Ok(addr)));
+                } else {
+                    conn.send(Message::CreateGameResponse(CreateGameResponse::Err));
+                }
+            }
             LeaderboardRequest => {}
         }
     }

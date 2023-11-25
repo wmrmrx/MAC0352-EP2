@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -8,8 +10,8 @@ pub enum Message {
     LoginResponse(LoginResponse),
     ChangePasswordResponse(ChangePasswordResponse),
     LogoutResponse,
-    CreatePartyResponse(CreatePartyResponse),
-    JoinPartyResponse(JoinPartyResponse),
+    CreateGameResponse(CreateGameResponse),
+    JoinGameResponse(JoinGameResponse),
     ConnectedUsersResponse(ConnectedUsersResponse),
     LeaderboardResponse(LeaderboardResponse),
     NotConnected,
@@ -39,14 +41,14 @@ pub struct ConnectedUsersResponse {
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum CreatePartyResponse {
+pub enum CreateGameResponse {
     Ok,
     Err,
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum JoinPartyResponse {
-    Ok,
+pub enum JoinGameResponse {
+    Ok(SocketAddr),
     Err,
 }
 

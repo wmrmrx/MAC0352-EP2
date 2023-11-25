@@ -31,7 +31,10 @@ impl Database {
 
     /// Returns true if created, false if otherwise
     pub fn create_user(&mut self, user: &str, password: &str) -> bool {
-        if self.user_exists(user) {
+        // Username must be reasonable, forbid whitespaces and limit length to 20
+        if user.chars().any(|c| c.is_whitespace()) || user.chars().count() > 20  {
+            false
+        } else if self.user_exists(user) {
             false
         } else {
             let mut file = File::create(format!("users/{user}")).unwrap();

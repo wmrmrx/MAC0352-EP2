@@ -20,7 +20,10 @@ pub struct ConnectionData {
 pub struct ConnectionTable {
     connections: BTreeMap<Connection, ConnectionData>,
     users: BTreeMap<String, Connection>,
-    party: Vec<Connection>,
+    pacmans: BTreeMap<String, Option<String>>, // Map : PacmanUsername -> Option<GhostUsername>
+    // Every game must have a pacman, but not
+    // necessarily a ghost
+    ghosts: BTreeMap<String, String>, // Map : GhostUsername -> PacmanUsername
 }
 
 impl ConnectionTable {
@@ -29,7 +32,8 @@ impl ConnectionTable {
         Self {
             connections: BTreeMap::new(),
             users: BTreeMap::new(),
-            party: Vec::new(),
+            pacmans: BTreeMap::new(),
+            ghosts: BTreeMap::new(),
         }
     }
 
@@ -41,50 +45,31 @@ impl ConnectionTable {
         &self.users
     }
 
-    pub fn get_party(&self) -> &[Connection] {
-        &self.party
-    }
-
-    fn kick_all(&mut self) {
-        for (conn, conn_data) in self.connections.iter_mut() {
-            use GameStatus::*;
-            match conn_data.status {
-                Pacman(_) | Ghost => {
-                    conn_data.status = GameStatus::Idle;
-                    log::info!(
-                        "Kicking connection {conn:?} with user {user} from the game.",
-                        user = conn_data.user.clone().unwrap_or("err".to_owned())
-                    );
-                }
-                Idle => {}
-            }
-        }
-        self.party.clear();
-    }
-
     /// Kick connection from game
     /// Returns true if kicked from a game
     pub fn kick(&mut self, conn: &Connection) -> bool {
         let Some(conn_data) = self.connections.get_mut(conn) else { return false; };
+        let Some(user) = conn_data.user.as_ref() else { return false; };
         use GameStatus::*;
         match conn_data.status {
             Pacman(_) => {
-                log::info!("Pacman (host) is being kicked. Kicking everyone from the game.");
-                self.kick_all();
+                log::info!("Kicking pacman (connection: {conn:?}, user: {user}). Also kicking ghost from the game if it exists.");
+                conn_data.status = Idle;
+                if let Some(ghost) = self.pacmans.remove(user).unwrap() {
+                    let ghost_conn = self.users.get(&ghost).unwrap();
+                    log::info!(
+                        "Kicking ghost (connection {ghost_conn:?}, user: {ghost}) from the game."
+                    );
+                    self.connections.get_mut(ghost_conn).unwrap().status = Idle;
+                    self.ghosts.remove(&ghost).unwrap();
+                }
                 true
             }
             Ghost => {
-                log::info!(
-                    "Kicking connection {conn:?} with user {user} from the game.",
-                    user = conn_data.user.clone().unwrap_or("err".to_owned())
-                );
-                for i in 0..self.party.len() {
-                    if self.party[i] == *conn {
-                        self.party.remove(i);
-                        break;
-                    }
-                }
-                conn_data.status = GameStatus::Idle;
+                log::info!("Kicking ghost (connection {conn:?}, user: {user}) from the game.");
+                conn_data.status = Idle;
+                let pacman = self.ghosts.remove(user).unwrap();
+                *self.pacmans.get_mut(&pacman).unwrap() = None;
                 true
             }
             Idle => false,
@@ -114,6 +99,24 @@ impl ConnectionTable {
         res
     }
 
+    pub fn set_heartbeat(&mut self, conn: &Connection) {
+        if let Some(conn_data) = self.connections.get_mut(conn) {
+            conn_data.last_heartbeat = current_time();
+        }
+    }
+
+    pub fn login(&mut self, conn: &Connection, user: &str) -> bool {
+        if let Some(conn_data) = self.connections.get_mut(conn) {
+            if self.users.get(user).is_none() {
+                log::info!("Connection {conn:?} logged in as {user}");
+                conn_data.user = Some(user.to_owned());
+                self.users.insert(user.to_owned(), conn.clone());
+                return true;
+            }
+        }
+        false
+    }
+
     // Returns true if the connection was inserted, false if it already existed
     pub fn insert(&mut self, conn: &Connection) -> bool {
         if self.connections.get(conn).is_some() {
@@ -132,9 +135,23 @@ impl ConnectionTable {
         }
     }
 
-    pub fn set_heartbeat(&mut self, conn: &Connection) {
-        if let Some(conn_data) = self.connections.get_mut(conn) {
-            conn_data.last_heartbeat = current_time();
+    pub fn create_game(&mut self, conn: &Connection, listener_addr: SocketAddr) -> bool {
+        let Some(conn_data) = self.connections.get_mut(conn) else { return false; };
+        let Some(user) = conn_data.user.as_mut() else { return false; };
+        if conn_data.status != GameStatus::Idle {
+            false
+        } else {
+            log::info!("User {user} with connection {conn:?} created a game on {listener_addr:?}");
+            conn_data.status = GameStatus::Pacman(listener_addr);
+            self.pacmans.insert(user.to_owned(), None);
+            true
         }
+    }
+
+    /// Returns the `listener_addr` of pacman if joining the game was sucessful
+    pub fn join_game(&mut self, conn: &Connection, pacman: &str) -> Option<SocketAddr> {
+        let Some(conn_data) = self.connections.get_mut(conn) else { return None; };
+        let Some(user) = conn_data.user.as_mut() else { return None; };
+        let Some(pacman_conn) = self.pacman.get_mut(
     }
 }

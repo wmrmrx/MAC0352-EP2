@@ -3,7 +3,6 @@ use std::{
     io::Read,
     net::{Ipv4Addr, SocketAddrV4, TcpListener, UdpSocket},
     sync::mpsc::{channel, Receiver},
-    time::Duration,
 };
 
 use pacman_communication::{client_server, PacmanMessage};

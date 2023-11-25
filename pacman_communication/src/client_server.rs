@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use crate::Connection;
 use serde::{Deserialize, Serialize};
 
@@ -16,8 +18,8 @@ pub enum MessageEnum {
     ChangePasswordRequest(ChangePasswordRequest),
     LogoutRequest,
     ConnectedUsersRequest,
-    CreatePartyRequest,
-    JoinPartyRequest,
+    CreateGameRequest(CreateGameRequest),
+    JoinGameRequest(JoinGameRequest),
     LeaderboardRequest,
 }
 
@@ -37,4 +39,15 @@ pub struct LoginRequest {
 pub struct ChangePasswordRequest {
     pub old_passwd: String,
     pub new_passwd: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CreateGameRequest {
+    pub listener_addr: SocketAddr,
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct JoinGameRequest {
+    pub pacman: String,
 }
