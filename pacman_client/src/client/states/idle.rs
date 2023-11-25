@@ -12,6 +12,7 @@ impl Idle {
         Self { info, user }
     }
     pub fn run(self) {
+        println!("You are idle and logged in as {}", &self.user);
         todo!()
     }
 }
