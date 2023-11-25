@@ -18,7 +18,7 @@ pub const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(1);
 pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Each connection has a listener
-#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Clone, Debug, Copy)]
 pub enum Connection {
     Udp(SocketAddr),
     Tcp(SocketAddr), // Using TCP just like UDP for simplicity

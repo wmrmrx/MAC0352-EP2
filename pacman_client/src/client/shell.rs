@@ -1,11 +1,5 @@
+use std::io::BufRead;
 use std::io::Write;
-use std::{io::BufRead};
-
-
-
-
-
-
 
 pub struct Shell {
     allowed_commands: Vec<String>,
@@ -42,9 +36,9 @@ impl Shell {
         }
     }
 
-    pub fn prompt(&self) -> Vec<String> {
+    pub fn prompt(&self, decoration: &str) -> Vec<String> {
         loop {
-            print!("> ");
+            print!("{decoration} > ");
             std::io::stdout().flush().unwrap();
             let mut lock = std::io::stdin().lock();
             let mut line = String::new();

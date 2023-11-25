@@ -14,8 +14,6 @@ use pacman_communication::{
     },
 };
 
-
-
 use crate::server::game::GameStatus;
 
 pub fn run(port: u16) {
@@ -134,6 +132,10 @@ pub fn run(port: u16) {
                 conn.send(Message::ConnectedUsersResponse(ConnectedUsersResponse {
                     users: users.into_boxed_slice(),
                 }));
+            }
+            QuitGameRequest => {
+                let mut conn_table = conn_table.lock().unwrap();
+                let _ = conn_table.kick(&conn);
             }
             CreateGameRequest(req) => {
                 let mut conn_table = conn_table.lock().unwrap();

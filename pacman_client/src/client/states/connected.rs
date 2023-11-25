@@ -1,15 +1,4 @@
-use std::{sync::{atomic::Ordering}};
-
-use pacman_communication::{
-    client_server::{LoginRequest, Message, MessageEnum, CreateUserRequest},
-    server_client::{Message as ServerMessage, LeaderboardResponse, ConnectedUsersResponse},
-};
-
-use crate::client::{
-    event::{watch, WatchErr},
-    states::idle::Idle,
-    CommonInfo,
-};
+use std::sync::atomic::Ordering;
 
 use super::*;
 
@@ -53,16 +42,16 @@ impl Connected {
 
     pub fn run(self) {
         println!(">>> CONECTADO AO SERVIDOR COM SUCESSO!");
-        let commands = ["novo", "entra", "lideres", "l", "tchau"];
+        let commands = ["novo", "entra", "tchau"];
         let shell = Shell::new(&commands);
         loop {
-            let command = shell.prompt();
+            let command = shell.prompt("");
             match command[0].as_str() {
                 "novo" => {
                     let (user, passwd) = (&command[1], &command[2]);
                     self.info.server.send(Message {
                         connection: self.info.connection.clone(),
-                        message: MessageEnum::CreateUserRequest(CreateUserRequest{
+                        message: MessageEnum::CreateUserRequest(CreateUserRequest {
                             user: user.to_owned(),
                             passwd: passwd.to_owned(),
                         }),
@@ -71,7 +60,10 @@ impl Connected {
                         matches!(msg, ServerMessage::CreateUserResponse(_))
                     }) {
                         Ok(msg) => {
-                            if let ServerMessage::CreateUserResponse(server_client::CreateUserResponse::Err) = msg {
+                            if let ServerMessage::CreateUserResponse(
+                                server_client::CreateUserResponse::Err,
+                            ) = msg
+                            {
                                 println!("Erro ao criar usuário (talvez ele já exista)");
                             } else {
                                 println!("Usuario criado com sucesso!");
@@ -114,56 +106,15 @@ impl Connected {
                     let idle_client = Idle::new(self.info, user.to_owned());
                     return idle_client.run();
                 }
-                "lideres" => {
-                    self.info.server.send(Message {
-                        connection: self.info.connection.clone(),
-                        message: MessageEnum::LeaderboardRequest
-                    });
-                    match watch(&self.info.recv, |msg| -> bool {
-                        matches!(msg, ServerMessage::LeaderboardResponse(_))
-                    }) {
-                        Ok(msg) => {
-                            let ServerMessage::LeaderboardResponse(LeaderboardResponse{top10}) = msg else { unreachable!() };
-                            println!("Lideres: {top10:?}");
-                        }
-                        Err(WatchErr::Timeout) => {
-                            println!("Timeout esperando pelo servidor!");
-                            continue;
-                        }
-                        Err(WatchErr::Disconnection) => return,
-                    }
-                }
-                "l" => {
-                    self.info.server.send(Message {
-                        connection: self.info.connection.clone(),
-                        message: MessageEnum::ConnectedUsersRequest
-                    });
-                    match watch(&self.info.recv, |msg| -> bool {
-                        matches!(msg, ServerMessage::ConnectedUsersResponse(_))
-                    }) {
-                        Ok(msg) => {
-                            let ServerMessage::ConnectedUsersResponse(ConnectedUsersResponse { users }) = msg else { unreachable!() };
-                            println!("Usuários online:");
-                            for user in users.iter() {
-                                println!("- {user}");
-                            }
-                        }
-                        Err(WatchErr::Timeout) => {
-                            println!("Timeout esperando pelo servidor!");
-                            continue;
-                        }
-                        Err(WatchErr::Disconnection) => return,
-                    }
-                }
                 "tchau" => {
                     self.info.server.send(Message {
                         connection: self.info.connection.clone(),
-                        message: MessageEnum::Disconnect
+                        message: MessageEnum::Disconnect,
                     });
                     self.info.keep_running.store(false, Ordering::Relaxed);
                     return;
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
     }

@@ -18,6 +18,7 @@ pub enum MessageEnum {
     LoginRequest(LoginRequest),
     ChangePasswordRequest(ChangePasswordRequest),
     LogoutRequest,
+    QuitGameRequest,
     ConnectedUsersRequest,
     CreateGameRequest(CreateGameRequest),
     JoinGameRequest(JoinGameRequest),
