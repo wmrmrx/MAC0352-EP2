@@ -34,7 +34,7 @@ impl Database {
     /// Returns true if created, false if otherwise
     pub fn create_user(&mut self, user: &str, password: &str) -> bool {
         // Username must be reasonable, forbid whitespaces and limit length to 20
-        if user.chars().any(|c| c.is_whitespace()) || user.chars().count() > 20  {
+        if user.chars().any(|c| c.is_whitespace()) || user.chars().count() > 20 {
             false
         } else if self.user_exists(user) {
             false
@@ -84,7 +84,8 @@ impl Database {
         }
         let mut file = File::create("leaderboard").unwrap();
         let leaderboard = leaderboard.into_boxed_slice();
-        file.write_all(serde_json::to_string(&leaderboard).unwrap().as_bytes()).unwrap();
+        file.write_all(serde_json::to_string(&leaderboard).unwrap().as_bytes())
+            .unwrap();
     }
 
     pub fn get_leaderboard(&self) -> Box<[LeaderboardEntry]> {

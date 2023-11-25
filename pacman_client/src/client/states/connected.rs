@@ -1,9 +1,9 @@
-use std::{sync::mpsc::RecvTimeoutError, time::Duration};
+use std::{sync::{mpsc::RecvTimeoutError, atomic::Ordering}, time::Duration};
 
 use pacman_communication::{
     client_server::{LoginRequest, Message, MessageEnum, CreateUserRequest},
     current_time,
-    server_client::{Message as ServerMessage, LeaderboardResponse},
+    server_client::{Message as ServerMessage, LeaderboardResponse, ConnectedUsersResponse},
 };
 
 use crate::client::{
@@ -133,7 +133,34 @@ impl Connected {
                     }
                 }
                 "l" => {
-                    todo!()
+                    self.info.server.send(Message {
+                        connection: self.info.connection.clone(),
+                        message: MessageEnum::ConnectedUsersRequest
+                    });
+                    match watch(&self.info.recv, |msg| -> bool {
+                        matches!(msg, ServerMessage::ConnectedUsersResponse(_))
+                    }) {
+                        Ok(msg) => {
+                            let ServerMessage::ConnectedUsersResponse(ConnectedUsersResponse { users }) = msg else { unreachable!() };
+                            println!("Usuários online:");
+                            for user in users.into_iter() {
+                                println!("- {user}");
+                            }
+                        }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                            continue;
+                        }
+                        Err(WatchErr::Disconnection) => return,
+                    }
+                }
+                "tchau" => {
+                    self.info.server.send(Message {
+                        connection: self.info.connection.clone(),
+                        message: MessageEnum::Disconnect
+                    });
+                    self.info.keep_running.store(false, Ordering::Relaxed);
+                    return;
                 }
                 _ => unreachable!()
             }

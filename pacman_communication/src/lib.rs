@@ -83,8 +83,8 @@ impl PacmanMessage for server_client::Message {
     }
     fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
         let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
-        res
+        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
+        Ok(res)
     }
 }
 
@@ -97,8 +97,8 @@ impl PacmanMessage for client_server::Message {
     }
     fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
         let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
-        res
+        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
+        Ok(res)
     }
 }
 
@@ -111,8 +111,8 @@ impl PacmanMessage for pacman_ghost::Message {
     }
     fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
         let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
-        res
+        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
+        Ok(res)
     }
 }
 
@@ -125,7 +125,7 @@ impl PacmanMessage for ghost_pacman::Message {
     }
     fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
         let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str(string) else { return Err(()); };
-        res
+        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
+        Ok(res)
     }
 }

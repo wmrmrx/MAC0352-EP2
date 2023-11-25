@@ -9,7 +9,8 @@ use database::Database;
 use pacman_communication::{
     client_server,
     server_client::{
-        self, ChangePasswordResponse, ConnectedUsersResponse, CreateUserResponse, LoginResponse, CreateGameResponse, JoinGameResponse, LeaderboardResponse,
+        self, ChangePasswordResponse, ConnectedUsersResponse, CreateGameResponse,
+        CreateUserResponse, JoinGameResponse, LeaderboardResponse, LoginResponse,
     },
 };
 
@@ -102,13 +103,36 @@ pub fn run(port: u16) {
                         }
                     }
                 }
-
             }
             ConnectedUsersRequest => {
                 let conn_table = conn_table.lock().unwrap();
-                let users: Box<[String]> = conn_table.get_users().keys().cloned().collect();
+                let mut users = Vec::new();
+                for user in conn_table.get_users().keys() {
+                    let conn = conn_table.get_users().get(user).unwrap();
+                    let conn_data = conn_table.get_connections().get(conn).unwrap();
+                    match conn_data.status {
+                        GameStatus::Idle => {
+                            users.push(format!("{user}: fazendo nada"));
+                        }
+                        GameStatus::Ghost => {
+                            users.push(format!(
+                                "{user}: em jogo com {}",
+                                conn_table.get_ghosts().get(user).unwrap()
+                            ));
+                        }
+                        GameStatus::Pacman(_) => {
+                            if let Some(other_user) = conn_table.get_pacmans().get(user).unwrap() {
+                                users.push(format!("{user}: em jogo com {other_user}"));
+                            } else {
+                                users.push(format!(
+                                    "{user}: em jogo com ninguém (pode ser desafiado)"
+                                ));
+                            }
+                        }
+                    }
+                }
                 conn.send(Message::ConnectedUsersResponse(ConnectedUsersResponse {
-                    users,
+                    users: users.into_boxed_slice(),
                 }));
             }
             CreateGameRequest(req) => {
@@ -129,7 +153,7 @@ pub fn run(port: u16) {
             }
             LeaderboardRequest => {
                 conn.send(Message::LeaderboardResponse(LeaderboardResponse {
-                    top10: database.get_leaderboard()
+                    top10: database.get_leaderboard(),
                 }));
             }
         }

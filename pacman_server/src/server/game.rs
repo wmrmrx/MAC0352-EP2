@@ -1,4 +1,4 @@
-use pacman_communication::{Connection, current_time};
+use pacman_communication::{current_time, Connection};
 use std::{collections::BTreeMap, net::SocketAddr, time::Duration};
 
 #[derive(Clone, PartialEq)]
@@ -43,6 +43,13 @@ impl ConnectionTable {
         &self.users
     }
 
+    pub fn get_pacmans(&self) -> &BTreeMap<String, Option<String>> {
+        &self.pacmans
+    }
+
+    pub fn get_ghosts(&self) -> &BTreeMap<String, String> {
+        &self.ghosts
+    }
 
     /// Kick connection from game
     /// Returns true if kicked from a game
@@ -155,7 +162,9 @@ impl ConnectionTable {
         let Some(pacman_conn_data) = self.connections.get(pacman_conn) else { return None; };
         let GameStatus::Pacman(addr) = pacman_conn_data.status else { return None; };
         let Some(other_player) = self.pacmans.get_mut(pacman) else { return None; };
-        if other_player.is_some() { return None; }
+        if other_player.is_some() {
+            return None;
+        }
         *other_player = Some(user.to_owned());
         self.ghosts.insert(user.to_owned(), pacman.to_owned());
         log::info!("Ghost (user: {user}, connection: {conn:?}) joined game created by user {pacman} with connection {pacman_conn:?}");
