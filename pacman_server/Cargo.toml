@@ -10,3 +10,4 @@ clap = { version = "4.4.8", features = ["derive"] }
 log = "0.4.20"
 log4rs = "1.2.0"
 pacman_communication = { path = "../pacman_communication" }
+serde_json = "1.0.108"

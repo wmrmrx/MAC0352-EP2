@@ -59,10 +59,10 @@ impl Direction {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LeaderboardEntry {
-    user: String,
     score: u64,
+    user: String,
 }
 
 pub trait PacmanMessage: Sized {

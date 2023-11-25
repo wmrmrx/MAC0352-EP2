@@ -14,7 +14,7 @@ enum Protocol {
     Udp,
 }
 
-pub mod state_machine;
+pub mod client;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
@@ -60,5 +60,5 @@ fn main() {
             });
         }
     }
-    state_machine::run(server, listener_addr, recv);
+    client::run(server, listener_addr, recv);
 }

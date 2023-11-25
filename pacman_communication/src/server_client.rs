@@ -54,5 +54,5 @@ pub enum JoinGameResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct LeaderboardResponse {
-    top10: Box<[crate::LeaderboardEntry]>,
+    pub top10: Box<[crate::LeaderboardEntry]>,
 }

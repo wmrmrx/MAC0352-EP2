@@ -5,6 +5,8 @@ use std::{
     io::{Read, Write},
 };
 
+use pacman_communication::LeaderboardEntry;
+
 fn user_file_path(user: &str) -> String {
     format!("users/{user}")
 }
@@ -69,5 +71,26 @@ impl Database {
         } else {
             false
         }
+    }
+
+    // Keeps top 10
+    pub fn add_leaderboard_entry(&mut self, entry: LeaderboardEntry) {
+        let mut leaderboard: Vec<LeaderboardEntry> = self.get_leaderboard().to_vec();
+        leaderboard.push(entry);
+        leaderboard.sort();
+        leaderboard.reverse();
+        if leaderboard.len() > 10 {
+            leaderboard = leaderboard[..10].to_vec();
+        }
+        let mut file = File::create("leaderboard").unwrap();
+        let leaderboard = leaderboard.into_boxed_slice();
+        file.write_all(serde_json::to_string(&leaderboard).unwrap().as_bytes()).unwrap();
+    }
+
+    pub fn get_leaderboard(&self) -> Box<[LeaderboardEntry]> {
+        let Ok(mut file) = File::open("leaderboard") else { return Box::new([]); };
+        let mut leaderboard_str = String::new();
+        file.read_to_string(&mut leaderboard_str).unwrap();
+        serde_json::from_str(&leaderboard_str).unwrap()
     }
 }

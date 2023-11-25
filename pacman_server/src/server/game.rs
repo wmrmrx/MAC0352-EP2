@@ -45,6 +45,7 @@ impl ConnectionTable {
         &self.users
     }
 
+
     /// Kick connection from game
     /// Returns true if kicked from a game
     pub fn kick(&mut self, conn: &Connection) -> bool {
@@ -150,8 +151,16 @@ impl ConnectionTable {
 
     /// Returns the `listener_addr` of pacman if joining the game was sucessful
     pub fn join_game(&mut self, conn: &Connection, pacman: &str) -> Option<SocketAddr> {
-        let Some(conn_data) = self.connections.get_mut(conn) else { return None; };
-        let Some(user) = conn_data.user.as_mut() else { return None; };
-        let Some(pacman_conn) = self.pacman.get_mut(
+        let Some(conn_data) = self.connections.get(conn) else { return None; };
+        let Some(user) = conn_data.user.as_ref() else { return None; };
+        let Some(pacman_conn) = self.users.get_mut(pacman) else { return None; };
+        let Some(pacman_conn_data) = self.connections.get(pacman_conn) else { return None; };
+        let GameStatus::Pacman(addr) = pacman_conn_data.status else { return None; };
+        let Some(other_player) = self.pacmans.get_mut(pacman) else { return None; };
+        if other_player.is_some() { return None; }
+        *other_player = Some(user.to_owned());
+        self.ghosts.insert(user.to_owned(), pacman.to_owned());
+        log::info!("Ghost (user: {user}, connection: {conn:?}) joined game created by user {pacman} with connection {pacman_conn:?}");
+        Some(addr)
     }
 }

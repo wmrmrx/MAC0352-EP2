@@ -9,7 +9,7 @@ use database::Database;
 use pacman_communication::{
     client_server,
     server_client::{
-        self, ChangePasswordResponse, ConnectedUsersResponse, CreateUserResponse, LoginResponse, CreateGameResponse, JoinGameResponse,
+        self, ChangePasswordResponse, ConnectedUsersResponse, CreateUserResponse, LoginResponse, CreateGameResponse, JoinGameResponse, LeaderboardResponse,
     },
 };
 
@@ -126,7 +126,11 @@ pub fn run(port: u16) {
                     conn.send(Message::CreateGameResponse(CreateGameResponse::Err));
                 }
             }
-            LeaderboardRequest => {}
+            LeaderboardRequest => {
+                conn.send(Message::LeaderboardResponse(LeaderboardResponse {
+                    top10: database.get_leaderboard()
+                }));
+            }
         }
     }
 }
