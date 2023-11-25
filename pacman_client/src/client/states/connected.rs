@@ -1,8 +1,7 @@
-use std::{sync::{mpsc::RecvTimeoutError, atomic::Ordering}, time::Duration};
+use std::{sync::{atomic::Ordering}};
 
 use pacman_communication::{
     client_server::{LoginRequest, Message, MessageEnum, CreateUserRequest},
-    current_time,
     server_client::{Message as ServerMessage, LeaderboardResponse, ConnectedUsersResponse},
 };
 
@@ -145,7 +144,7 @@ impl Connected {
                         Ok(msg) => {
                             let ServerMessage::ConnectedUsersResponse(ConnectedUsersResponse { users }) = msg else { unreachable!() };
                             println!("Usuários online:");
-                            for user in users.into_iter() {
+                            for user in users.iter() {
                                 println!("- {user}");
                             }
                         }

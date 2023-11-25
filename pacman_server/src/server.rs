@@ -14,7 +14,7 @@ use pacman_communication::{
     },
 };
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
 
 use crate::server::game::GameStatus;
 
@@ -80,7 +80,7 @@ pub fn run(port: u16) {
                 let conn_table = conn_table.lock().unwrap();
                 if let Some(conn_data) = conn_table.get_connections().get(&conn) {
                     if let Some(user) = conn_data.user.as_ref() {
-                        if database.change_password(&user, &req.old_passwd, &req.new_passwd) {
+                        if database.change_password(user, &req.old_passwd, &req.new_passwd) {
                             log::info!(
                                 "User {} with connection {:?} changed password",
                                 &user,

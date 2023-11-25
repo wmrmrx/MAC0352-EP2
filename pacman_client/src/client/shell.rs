@@ -1,11 +1,11 @@
 use std::io::Write;
-use std::{fs::read_to_string, io::BufRead};
+use std::{io::BufRead};
 
-use pacman_communication::client_server::{LoginRequest, Message, MessageEnum};
-use pacman_communication::server_client::{LoginResponse, Message as ServerMessage};
 
-use super::event::watch;
-use super::CommonInfo;
+
+
+
+
 
 pub struct Shell {
     allowed_commands: Vec<String>,
