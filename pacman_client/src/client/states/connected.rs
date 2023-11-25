@@ -1,4 +1,4 @@
-use std::{time::Duration, sync::{mpsc::RecvTimeoutError, atomic::Ordering}};
+use std::{time::Duration, sync::mpsc::RecvTimeoutError};
 
 use pacman_communication::{
     client_server::{Message, MessageEnum},
@@ -8,13 +8,14 @@ use pacman_communication::{
 use super::*;
 
 pub struct Connected {
-    _dummy: () // dummy field to make constructor private
+    info: CommonInfo // dummy field to make constructor private
 }
 
+
 impl Connected {
-    pub fn new(info: &mut Info) -> Option<Self> {
-        info.server.send(Message {
-            connection: info.connection.clone(),
+    pub fn new(server: Connection, connection: Connection, recv: Receiver<ServerMessage>, keep_running: Arc<AtomicBool>) -> Option<Self> {
+        server.send(Message {
+            connection: connection.clone(),
             message: MessageEnum::ConnectRequest
         });
         // 10 seconds for timeout
@@ -24,14 +25,14 @@ impl Connected {
             if current_time() - start > timeout {
                 break;
             }
-            match info.recv.recv_timeout(RECV_TIMEOUT) {
+            match recv.recv_timeout(RECV_TIMEOUT) {
                 Ok(message) => {
                     if let ServerMessage::ConnectResponse = message {
-                        heartbeat::setup(info.server, info.recv);
-                        let connected_client = Some(Connected {
-                            _dummy: ()
-                        });
-                        return connected_client;
+                        // heartbeat::setup(server, recv);
+                        //let connected_client = Some(Connected {
+                        //    _dummy: ()
+                        //});
+                        //return connected_client;
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {}
@@ -43,6 +44,6 @@ impl Connected {
         None
     }
 
-    pub fn run(self, info: Info) {
+    pub fn run(self) {
     }
 }
