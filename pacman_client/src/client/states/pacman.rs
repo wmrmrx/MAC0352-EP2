@@ -29,22 +29,19 @@ impl Pacman {
             listener.set_nonblocking(true).unwrap();
             while keep_running1.load(Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(33));
-                match listener.accept() {
-                    Ok((mut stream, _)) => {
-                        let mut buf = [0u8; 9001];
-                        let Ok(amt) = stream.read(&mut buf) else {
+                if let Ok((mut stream, _)) = listener.accept() {
+                    let mut buf = [0u8; 9001];
+                    let Ok(amt) = stream.read(&mut buf) else {
                             continue;
                         };
-                        // Start of connection: Ghost should send its user
-                        let Ok(ghost_user) = std::str::from_utf8(&buf[..amt]) else { continue; };
-                        let mut conn = connection1.lock().unwrap();
-                        if conn.is_none() {
-                            println!("Aceitando desafio de {ghost_user}");
-                            *conn = Some((stream, ghost_user.to_owned()));
-                        }
-                        drop(conn);
+                    // Start of connection: Ghost should send its user
+                    let Ok(ghost_user) = std::str::from_utf8(&buf[..amt]) else { continue; };
+                    let mut conn = connection1.lock().unwrap();
+                    if conn.is_none() {
+                        println!("Aceitando desafio de {ghost_user}");
+                        *conn = Some((stream, ghost_user.to_owned()));
                     }
-                    Err(_) => {}
+                    drop(conn);
                 }
             }
         });
