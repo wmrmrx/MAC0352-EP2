@@ -6,7 +6,7 @@ use std::{
 
 use pacman_communication::{current_time, game::Game};
 
-use super::*;
+use super::{CommonInfo, Idle, Message, MessageEnum, Shell};
 
 pub struct Ghost {
     info: CommonInfo,

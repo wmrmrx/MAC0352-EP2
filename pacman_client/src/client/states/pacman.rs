@@ -8,7 +8,7 @@ use std::{
 use pacman_communication::{current_time, game::Game, LeaderboardEntry};
 use rand::seq::SliceRandom;
 
-use super::*;
+use super::{Arc, AtomicBool, CommonInfo, Idle, Message, MessageEnum, Shell};
 
 pub struct Pacman {
     info: CommonInfo,
@@ -115,16 +115,16 @@ impl Pacman {
             let mut conn = self.connection.lock().unwrap();
             if let Some((stream, ghost_user)) = conn.as_mut() {
                 game.add_remote_ghost();
-                println!("Esperando pelo turno de {}", ghost_user);
+                println!("Esperando pelo turno de {ghost_user}");
                 let game_str = serde_json::to_string(&game).unwrap();
                 let mut buf = [0u8; 9001];
                 let start = current_time();
                 if stream.write_all(game_str.as_bytes()).is_err() {
-                    println!("Erro de conexão com o usuário {}", ghost_user);
+                    println!("Erro de conexão com o usuário {ghost_user}");
                     *conn = None;
                 } else {
                     let latency = current_time() - start;
-                    self.latencies.push((latency, ghost_user.to_owned()));
+                    self.latencies.push((latency, ghost_user.clone()));
                     if let Ok(amt) = stream.read(&mut buf) {
                         if amt == 0 {
                             println!("Conexão fechada!");
@@ -134,11 +134,11 @@ impl Pacman {
                         {
                             game = remote_game
                         } else {
-                            println!("Erro de conexão com o usuário {}", ghost_user);
+                            println!("Erro de conexão com o usuário {ghost_user}");
                             *conn = None;
                         }
                     } else {
-                        println!("Erro de conexão com o usuário {}", ghost_user);
+                        println!("Erro de conexão com o usuário {ghost_user}");
                         *conn = None;
                     }
                 }
