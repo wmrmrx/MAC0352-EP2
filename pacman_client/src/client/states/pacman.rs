@@ -116,8 +116,15 @@ impl Pacman {
                     let latency = current_time() - start;
                     self.latencies.push((latency, ghost_user.to_owned()));
                     if let Ok(amt) = stream.read(&mut buf) {
-                        game = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap())
-                            .unwrap();
+                        if amt == 0 {
+                            println!("Conexão fechada!");
+                            *conn = None;
+                        } else if let Ok(remote_game) = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()) {
+                            game = remote_game
+                        } else {
+                            println!("Erro de conexão com o usuário {}", ghost_user);
+                            *conn = None;
+                        }
                     } else {
                         println!("Erro de conexão com o usuário {}", ghost_user);
                         *conn = None;

@@ -71,7 +71,9 @@ impl Ghost {
             println!("Aguardando pelo turno de {}....", &self.pacman_user);
             let mut game: Game;
             let Ok(amt) = self.stream.read(&mut buf) else { return self.fail(); };
-            if let Ok(remote_game) = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()) {
+            if amt == 0 {
+                println!("Conexão fechada!");
+            } if let Ok(remote_game) = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()) {
                 game = remote_game;
             } else {
                 return self.fail();
