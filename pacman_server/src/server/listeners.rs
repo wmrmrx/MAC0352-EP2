@@ -18,7 +18,7 @@ pub fn start(port: u16) -> Receiver<client_server::Message> {
             loop {
                 match listener.recv(&mut buf) {
                     Ok(amt) => {
-                        let Ok(msg) = PacmanMessage::from_bytes(&buf[..amt]) else { continue; };
+                        let Some(msg) = PacmanMessage::from_bytes(&buf[..amt]) else { continue; };
                         send.send(msg).unwrap();
                     }
                     Err(err) => {
@@ -42,7 +42,7 @@ pub fn start(port: u16) -> Receiver<client_server::Message> {
                             let mut buf = [0; 9001];
                             loop {
                                 let Ok(amt) = stream.read(&mut buf) else { break; };
-                                if let Ok(msg) = PacmanMessage::from_bytes(&buf[..amt]) {
+                                if let Some(msg) = PacmanMessage::from_bytes(&buf[..amt]) {
                                     send.send(msg).unwrap();
                                 }
                             }

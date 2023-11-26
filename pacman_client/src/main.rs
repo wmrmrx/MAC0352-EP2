@@ -53,7 +53,7 @@ fn main() {
                         std::thread::sleep(Duration::from_millis(33));
                         let Ok((mut stream, _)) = listener.accept() else { continue; };
                         let Ok(amt) = stream.read(&mut buf) else { continue; };
-                        let Ok(msg) = PacmanMessage::from_bytes(&buf[..amt]) else { continue; };
+                        let Some(msg) = PacmanMessage::from_bytes(&buf[..amt]) else { continue; };
                         send.send(msg).unwrap();
                     }
                     server_addr.send(client_server::Message {
@@ -76,7 +76,7 @@ fn main() {
                     while keep_running.load(Ordering::Relaxed) {
                         std::thread::sleep(Duration::from_millis(33));
                         let Ok(amt) = listener.recv(&mut buf) else { continue; };
-                        let Ok(msg) = PacmanMessage::from_bytes(&buf[..amt]) else { continue; };
+                        let Some(msg) = PacmanMessage::from_bytes(&buf[..amt]) else { continue; };
                         send.send(msg).unwrap();
                     }
                     server_addr.send(client_server::Message {

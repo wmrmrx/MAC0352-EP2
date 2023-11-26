@@ -2,8 +2,6 @@
 //! In this module are things relevant to both the client and server
 
 pub mod client_server;
-pub mod ghost_pacman;
-pub mod pacman_ghost;
 pub mod server_client;
 
 use std::{
@@ -66,13 +64,13 @@ impl Direction {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct LeaderboardEntry {
-    score: u64,
-    user: String,
+    pub score: u64,
+    pub user: String,
 }
 
 pub trait PacmanMessage: Sized + std::fmt::Debug {
     fn to_bytes(&self) -> Box<[u8]>;
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ()>;
+    fn from_bytes(bytes: &[u8]) -> Option<Self>;
 }
 
 impl PacmanMessage for server_client::Message {
@@ -82,10 +80,10 @@ impl PacmanMessage for server_client::Message {
             .into_bytes()
             .into_boxed_slice()
     }
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
-        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
-        Ok(res)
+    fn from_bytes(bytes: &[u8]) -> Option<Self> {
+        let Ok(string) = std::str::from_utf8(bytes) else { return None; };
+        let Ok(res) = serde_json::from_str::<Self>(string) else { return None; };
+        Some(res)
     }
 }
 
@@ -96,37 +94,9 @@ impl PacmanMessage for client_server::Message {
             .into_bytes()
             .into_boxed_slice()
     }
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
-        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
-        Ok(res)
-    }
-}
-
-impl PacmanMessage for pacman_ghost::Message {
-    fn to_bytes(&self) -> Box<[u8]> {
-        serde_json::to_string(self)
-            .unwrap()
-            .into_bytes()
-            .into_boxed_slice()
-    }
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
-        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
-        Ok(res)
-    }
-}
-
-impl PacmanMessage for ghost_pacman::Message {
-    fn to_bytes(&self) -> Box<[u8]> {
-        serde_json::to_string(self)
-            .unwrap()
-            .into_bytes()
-            .into_boxed_slice()
-    }
-    fn from_bytes(bytes: &[u8]) -> Result<Self, ()> {
-        let Ok(string) = std::str::from_utf8(bytes) else { return Err(()); };
-        let Ok(res) = serde_json::from_str::<Self>(string) else { return Err(()); };
-        Ok(res)
+    fn from_bytes(bytes: &[u8]) -> Option<Self> {
+        let Ok(string) = std::str::from_utf8(bytes) else { return None; };
+        let Ok(res) = serde_json::from_str::<Self>(string) else { return None; };
+        Some(res)
     }
 }

@@ -22,8 +22,8 @@ impl Idle {
     pub fn new(info: CommonInfo, user: String) -> Self {
         Self { info, user }
     }
+
     pub fn run(self) {
-        println!("You are idle and logged in as {}", &self.user);
         let commands = ["lideres", "l", "inicia", "desafio", "sai", "tchau"];
 
         let shell = Shell::new(&commands);
