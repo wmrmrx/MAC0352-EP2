@@ -92,8 +92,7 @@ impl Idle {
                             let ServerMessage::JoinGameResponse(response) = msg else { unreachable!() };
                             if let JoinGameResponse::Ok(pacman_addr) = response {
                                 println!("Servidor aceitou o desafio!");
-                                let ghost_client = Ghost::new(self.info, self.user, pacman_addr);
-                                return ghost_client.run();
+                                return Ghost::new_and_run(self.info, self.user, pacman_addr, pacman.to_owned());
                             } else {
                                 println!("Servidor rejeitou o desafio!");
                             }
