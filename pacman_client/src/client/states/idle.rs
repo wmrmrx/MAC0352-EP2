@@ -103,7 +103,7 @@ impl Idle {
                     match watch(&self.info.recv, |msg| -> bool {
                         matches!(msg, ServerMessage::LogoutResponse)
                     }) {
-                        Ok(msg) => {
+                        Ok(_msg) => {
                             println!("Logout feito com sucesso!");
                             let connected_client = Connected::from_logout(self.info);
                             return connected_client.run();

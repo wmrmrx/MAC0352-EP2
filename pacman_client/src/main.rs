@@ -41,12 +41,12 @@ fn main() {
             Protocol::Tcp => {
                 let keep_running = keep_running.clone();
                 server = Connection::Tcp(args.server_addr);
-                let server_addr = server.clone();
+                let server_addr = server;
                 let listener =
                     TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap();
                 listener.set_nonblocking(true).unwrap();
                 let listener_addr = Connection::Tcp(listener.local_addr().unwrap());
-                connection = listener_addr.clone();
+                connection = listener_addr;
                 std::thread::spawn(move || {
                     let mut buf = [0u8; 9001];
                     while keep_running.load(Ordering::Relaxed) {
@@ -65,12 +65,12 @@ fn main() {
             Protocol::Udp => {
                 let keep_running = keep_running.clone();
                 server = Connection::Udp(args.server_addr);
-                let server_addr = server.clone();
+                let server_addr = server;
                 let listener =
                     UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap();
                 listener.set_nonblocking(true).unwrap();
                 let listener_addr = Connection::Udp(listener.local_addr().unwrap());
-                connection = listener_addr.clone();
+                connection = listener_addr;
                 std::thread::spawn(move || {
                     let mut buf = [0u8; 9001];
                     while keep_running.load(Ordering::Relaxed) {

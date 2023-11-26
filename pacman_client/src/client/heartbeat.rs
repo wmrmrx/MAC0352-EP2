@@ -51,7 +51,7 @@ pub fn setup(
     std::thread::spawn(move || {
         while keep_running.load(Ordering::Relaxed) {
             server.send(client_server::Message {
-                connection: connection.clone(),
+                connection,
                 message: MessageEnum::Heartbeat,
             });
             std::thread::sleep(HEARTBEAT_INTERVAL);

@@ -158,6 +158,9 @@ pub fn run(port: u16) {
                     top10: database.get_leaderboard(),
                 }));
             }
+            AddLeaderboardEntry(entry) => {
+                database.add_leaderboard_entry(entry);
+            }
         }
     }
 }

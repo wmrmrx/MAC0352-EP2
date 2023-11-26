@@ -24,7 +24,7 @@ pub fn setup(conn_table: Arc<Mutex<ConnectionTable>>) {
                 let now = current_time();
                 for (conn, conn_data) in conn_table.get_connections().iter() {
                     if now - conn_data.last_heartbeat > HEARTBEAT_TIMEOUT {
-                        expired.push(conn.clone());
+                        expired.push(*conn);
                     }
                 }
                 for conn in expired {

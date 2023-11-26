@@ -116,7 +116,7 @@ impl ConnectionTable {
             if self.users.get(user).is_none() {
                 log::info!("Connection {conn:?} logged in as {user}");
                 conn_data.user = Some(user.to_owned());
-                self.users.insert(user.to_owned(), conn.clone());
+                self.users.insert(user.to_owned(), *conn);
                 return true;
             }
         }
@@ -130,7 +130,7 @@ impl ConnectionTable {
         } else {
             log::info!("Connection added: {conn:?}");
             self.connections.insert(
-                conn.clone(),
+                *conn,
                 ConnectionData {
                     user: None,
                     status: GameStatus::Idle,
@@ -156,18 +156,26 @@ impl ConnectionTable {
 
     /// Returns the `listener_addr` of pacman if joining the game was sucessful
     pub fn join_game(&mut self, conn: &Connection, pacman: &str) -> Option<SocketAddr> {
-        let Some(conn_data) = self.connections.get(conn) else { return None; };
-        let Some(user) = conn_data.user.as_ref() else { return None; };
-        let Some(pacman_conn) = self.users.get_mut(pacman) else { return None; };
-        let Some(pacman_conn_data) = self.connections.get(pacman_conn) else { return None; };
-        let GameStatus::Pacman(addr) = pacman_conn_data.status else { return None; };
-        let Some(other_player) = self.pacmans.get_mut(pacman) else { return None; };
-        if other_player.is_some() {
-            return None;
+        let res = || -> Option<SocketAddr> {
+            let Some(conn_data) = self.connections.get(conn) else { return None; };
+            let Some(user) = conn_data.user.as_ref() else { return None; };
+            let Some(pacman_conn) = self.users.get_mut(pacman) else { return None; };
+            let Some(pacman_conn_data) = self.connections.get(pacman_conn) else { return None; };
+            let GameStatus::Pacman(addr) = pacman_conn_data.status else { return None; };
+            let Some(other_player) = self.pacmans.get_mut(pacman) else { return None; };
+            if other_player.is_some() {
+                return None;
+            }
+            *other_player = Some(user.to_owned());
+            self.ghosts.insert(user.to_owned(), pacman.to_owned());
+            log::info!("Ghost (user: {user}, connection: {conn:?}) joined game created by user {pacman} with connection {pacman_conn:?}");
+            Some(addr)
+        }();
+        // let res = res();
+        if res.is_some() {
+            let conn_data = self.connections.get_mut(conn).unwrap();
+            conn_data.status = GameStatus::Ghost;
         }
-        *other_player = Some(user.to_owned());
-        self.ghosts.insert(user.to_owned(), pacman.to_owned());
-        log::info!("Ghost (user: {user}, connection: {conn:?}) joined game created by user {pacman} with connection {pacman_conn:?}");
-        Some(addr)
+        res
     }
 }

@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use crate::Connection;
+use crate::{Connection, LeaderboardEntry};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -23,6 +23,7 @@ pub enum MessageEnum {
     CreateGameRequest(CreateGameRequest),
     JoinGameRequest(JoinGameRequest),
     LeaderboardRequest,
+    AddLeaderboardEntry(LeaderboardEntry)
 }
 
 #[derive(Serialize, Deserialize, Debug)]

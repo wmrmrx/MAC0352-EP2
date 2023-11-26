@@ -1,4 +1,4 @@
-use std::net::{TcpListener, TcpStream, SocketAddr};
+use std::net::{TcpStream, SocketAddr};
 
 use super::*;
 
@@ -9,7 +9,7 @@ pub struct Ghost {
 }
 
 impl Ghost {
-    pub fn new(info: CommonInfo, user: String, pacman_addr: SocketAddr) -> Self {
+    pub fn new(_info: CommonInfo, _user: String, _pacman_addr: SocketAddr) -> Self {
         todo!();
     }
 

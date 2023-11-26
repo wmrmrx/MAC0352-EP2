@@ -11,7 +11,7 @@ impl Connected {
         mut info: CommonInfo
     ) -> Option<Self> {
         info.server.send(Message {
-            connection: info.connection.clone(),
+            connection: info.connection,
             message: MessageEnum::ConnectRequest,
         });
         match watch(&info.recv, |msg| -> bool {
@@ -48,7 +48,7 @@ impl Connected {
                 "novo" => {
                     let (user, passwd) = (&command[1], &command[2]);
                     self.info.server.send(Message {
-                        connection: self.info.connection.clone(),
+                        connection: self.info.connection,
                         message: MessageEnum::CreateUserRequest(CreateUserRequest {
                             user: user.to_owned(),
                             passwd: passwd.to_owned(),
@@ -77,7 +77,7 @@ impl Connected {
                     let (user, passwd) = (&command[1], &command[2]);
 
                     self.info.server.send(Message {
-                        connection: self.info.connection.clone(),
+                        connection: self.info.connection,
                         message: MessageEnum::LoginRequest(LoginRequest {
                             user: user.to_owned(),
                             passwd: passwd.to_owned(),
@@ -103,7 +103,7 @@ impl Connected {
                 }
                 "tchau" => {
                     self.info.server.send(Message {
-                        connection: self.info.connection.clone(),
+                        connection: self.info.connection,
                         message: MessageEnum::Disconnect,
                     });
                     self.info.keep_running.store(false, Ordering::Relaxed);
