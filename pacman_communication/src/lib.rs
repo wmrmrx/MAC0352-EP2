@@ -29,7 +29,6 @@ pub fn current_time() -> Duration {
 
 impl Connection {
     pub fn send<T: PacmanMessage>(&self, msg: T) {
-        dbg!("Sending", &msg);
         match self {
             Connection::Udp(addr) => {
                 let socket = UdpSocket::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)).unwrap();
