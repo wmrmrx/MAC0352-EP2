@@ -1,6 +1,8 @@
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 
-use pacman_communication::{client_server::CreateGameRequest, server_client::CreateGameResponse};
+use pacman_communication::{client_server::{CreateGameRequest, JoinGameRequest}, server_client::{CreateGameResponse, JoinGameResponse}};
+
+use crate::client::states::{pacman::Pacman, ghost::Ghost};
 
 use super::*;
 
@@ -35,7 +37,6 @@ impl Idle {
                         }
                         Err(WatchErr::Timeout) => {
                             println!("Timeout esperando pelo servidor!");
-                            continue;
                         }
                         Err(WatchErr::Disconnection) => return,
                     }
@@ -57,7 +58,6 @@ impl Idle {
                         }
                         Err(WatchErr::Timeout) => {
                             println!("Timeout esperando pelo servidor!");
-                            continue;
                         }
                         Err(WatchErr::Disconnection) => return,
                     }
@@ -69,6 +69,50 @@ impl Idle {
                     });
                     self.info.keep_running.store(false, Ordering::Relaxed);
                     return;
+                }
+                "desafio" => {
+                    let pacman = command[1].as_str();
+                    self.info.server.send(Message {
+                        connection: self.info.connection,
+                        message: MessageEnum::JoinGameRequest(JoinGameRequest { pacman: pacman.to_owned() } ),
+                    });
+                    match watch(&self.info.recv, |msg| -> bool {
+                        matches!(msg, ServerMessage::JoinGameResponse(_))
+                    }) {
+                        Ok(msg) => {
+                            let ServerMessage::JoinGameResponse(response) = msg else { unreachable!() };
+                            if let JoinGameResponse::Ok(pacman_addr) = response {
+                                println!("Servidor aceitou o desafio!");
+                                let ghost_client = Ghost::new(self.info, self.user, pacman_addr);
+                                return ghost_client.run();
+                            } else {
+                                println!("Servidor rejeitou o desafio!");
+                            }
+                        }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                        }
+                        Err(WatchErr::Disconnection) => return,
+                    }
+                }
+                "sai" => {
+                    self.info.server.send(Message {
+                        connection: self.info.connection,
+                        message: MessageEnum::LogoutRequest,
+                    });
+                    match watch(&self.info.recv, |msg| -> bool {
+                        matches!(msg, ServerMessage::LogoutResponse)
+                    }) {
+                        Ok(msg) => {
+                            println!("Logout feito com sucesso!");
+                            let connected_client = Connected::from_logout(self.info);
+                            return connected_client.run();
+                        }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                        }
+                        Err(WatchErr::Disconnection) => return,
+                    }
                 }
                 "inicia" => {
                     let listener =
@@ -87,10 +131,16 @@ impl Idle {
                             let ServerMessage::CreateGameResponse(response) = msg else { unreachable!(); };
                             if let CreateGameResponse::Ok = response {
                                 println!("Created game with success");
+                                let pacman_client = Pacman::new(self.info, self.user, listener);
+                                return pacman_client.run();
                             } else {
                                 println!("Couldn't create a game!");
                             }
                         }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                        }
+                        Err(WatchErr::Disconnection) => return,
                     }
                 }
                 _ => unreachable!(),

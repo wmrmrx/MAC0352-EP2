@@ -8,35 +8,33 @@ pub struct Connected {
 
 impl Connected {
     pub fn new(
-        server: Connection,
-        connection: Connection,
-        mut recv: Receiver<ServerMessage>,
-        keep_running: Arc<AtomicBool>,
+        mut info: CommonInfo
     ) -> Option<Self> {
-        server.send(Message {
-            connection: connection.clone(),
+        info.server.send(Message {
+            connection: info.connection.clone(),
             message: MessageEnum::ConnectRequest,
         });
-        match watch(&recv, |msg| -> bool {
+        match watch(&info.recv, |msg| -> bool {
             matches!(msg, ServerMessage::ConnectResponse)
         }) {
             Ok(_) => {
-                recv = heartbeat::setup(
-                    server.clone(),
-                    connection.clone(),
-                    recv,
-                    keep_running.clone(),
+                info.recv = heartbeat::setup(
+                    info.server,
+                    info.connection,
+                    info.recv,
+                    info.keep_running.clone(),
                 );
                 Some(Self {
-                    info: CommonInfo {
-                        server,
-                        connection,
-                        recv,
-                        keep_running,
-                    },
+                    info
                 })
             }
             Err(_) => None,
+        }
+    }
+
+    pub fn from_logout(info: CommonInfo) -> Self {
+        Self {
+            info
         }
     }
 
@@ -71,7 +69,6 @@ impl Connected {
                         }
                         Err(WatchErr::Timeout) => {
                             println!("Timeout esperando pelo servidor!");
-                            continue;
                         }
                         Err(WatchErr::Disconnection) => return,
                     }
@@ -94,12 +91,10 @@ impl Connected {
                                 msg
                             {
                                 println!("Login não aceito, talvez a senha ou o usuário podem estar errados");
-                                continue;
                             }
                         }
                         Err(WatchErr::Timeout) => {
                             println!("Timeout esperando pelo servidor!");
-                            continue;
                         }
                         Err(WatchErr::Disconnection) => return,
                     }

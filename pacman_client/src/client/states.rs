@@ -1,3 +1,5 @@
+pub mod ghost;
+pub mod pacman;
 pub mod connected;
 pub mod idle;
 

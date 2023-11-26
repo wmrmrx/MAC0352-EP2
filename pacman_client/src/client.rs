@@ -21,7 +21,7 @@ pub fn run(
     recv: Receiver<server_client::Message>,
     keep_running: Arc<AtomicBool>,
 ) {
-    if let Some(connected_client) = states::Connected::new(server, connection, recv, keep_running) {
+    if let Some(connected_client) = states::Connected::new(CommonInfo { server, connection, recv, keep_running }) {
         println!("Connected to server!");
         connected_client.run();
     } else {
