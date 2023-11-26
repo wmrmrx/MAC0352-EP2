@@ -56,7 +56,7 @@ impl Game {
         let (x, y) = self.local_ghost;
         copy[x][y] = b'F';
         if let Some((x, y)) = self.remote_ghost {
-            copy[x][y] = b'F';
+            copy[x][y] = b'f';
         }
         for line in copy {
             println!("{}", std::str::from_utf8(&line).unwrap());

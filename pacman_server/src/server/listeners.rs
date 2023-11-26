@@ -32,21 +32,17 @@ pub fn start(port: u16) -> Receiver<client_server::Message> {
     }
     {
         std::thread::spawn(move || {
+            let mut buf = [0u8; 9001];
             let listener =
                 TcpListener::bind(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port)).unwrap();
             for stream in listener.incoming() {
                 match stream {
                     Ok(mut stream) => {
                         let send = send.clone();
-                        std::thread::spawn(move || {
-                            let mut buf = [0; 9001];
-                            loop {
-                                let Ok(amt) = stream.read(&mut buf) else { break; };
-                                if let Some(msg) = PacmanMessage::from_bytes(&buf[..amt]) {
-                                    send.send(msg).unwrap();
-                                }
-                            }
-                        });
+                        let Ok(amt) = stream.read(&mut buf) else { break; };
+                        if let Some(msg) = PacmanMessage::from_bytes(&buf[..amt]) {
+                            send.send(msg).unwrap();
+                        }
                     }
                     Err(err) => {
                         eprintln!("Unknown error: {err}");

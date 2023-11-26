@@ -68,6 +68,7 @@ impl Ghost {
     fn run(mut self) {
         let mut buf = [0u8; 9001];
         loop {
+            println!("Aguardando pelo pacman...");
             let Ok(amt) = self.stream.read(&mut buf) else { return self.fail(); };
             let mut game: Game =
                 serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()).unwrap();
@@ -84,7 +85,7 @@ impl Ghost {
                 match command[0].as_str() {
                     "move" => {
                         let dir = command[1].chars().next().unwrap();
-                        game.move_pacman(dir);
+                        game.move_remote_ghost(dir);
                         break;
                     }
                     "atraso" => {
@@ -94,7 +95,7 @@ impl Ghost {
                         }
                         let len = self.latencies.len().min(3);
                         println!("Últimas latências:");
-                        println!("{:?}", &self.latencies[self.latencies.len() - 1 - len..]);
+                        println!("{:?}", &self.latencies[self.latencies.len() - len..]);
                     }
                     "encerra" => {
                         return self.finish();

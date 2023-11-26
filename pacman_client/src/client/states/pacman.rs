@@ -102,7 +102,6 @@ impl Pacman {
             let mut conn = self.connection.lock().unwrap();
             if let Some((stream, ghost_user)) = conn.as_mut() {
                 game.add_remote_ghost();
-                let _ = stream.write_all(serde_json::to_string(&game).unwrap().as_bytes());
                 println!("Esperando pelo turno de {}", ghost_user);
                 let start = current_time();
                 if stream
@@ -117,7 +116,6 @@ impl Pacman {
                         let latency = current_time() - start;
                         game = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap())
                             .unwrap();
-                        game.show();
                         self.latencies.push((latency, ghost_user.to_owned()));
                     } else {
                         println!("Erro de conexão com o usuário {}", ghost_user);
