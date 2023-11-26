@@ -24,6 +24,9 @@ impl Ghost {
         pacman_user: String,
     ) {
         if let Ok(mut stream) = TcpStream::connect(pacman_addr) {
+            stream
+                .set_read_timeout(Some(Duration::from_secs(60)))
+                .unwrap();
             stream.write_all(user.as_bytes()).unwrap();
             println!("Conectado ao Pacman com sucesso!");
             Self {
@@ -47,6 +50,7 @@ impl Ghost {
 
     pub fn finish(self) {
         println!("Saindo do jogo!");
+        drop(self.stream);
         self.info.server.send(Message {
             connection: self.info.connection,
             message: MessageEnum::QuitGameRequest,
@@ -57,6 +61,7 @@ impl Ghost {
 
     pub fn fail(self) {
         println!("Falha no jogo P2P!");
+        drop(self.stream);
         self.info.server.send(Message {
             connection: self.info.connection,
             message: MessageEnum::QuitGameRequest,
@@ -73,7 +78,9 @@ impl Ghost {
             let Ok(amt) = self.stream.read(&mut buf) else { return self.fail(); };
             if amt == 0 {
                 println!("Conexão fechada!");
-            } if let Ok(remote_game) = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()) {
+            }
+            if let Ok(remote_game) = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap())
+            {
                 game = remote_game;
             } else {
                 return self.fail();
@@ -86,8 +93,10 @@ impl Ghost {
             let commands = ["move", "atraso", "encerra"];
             let shell = Shell::new(&commands, self.info.keep_running.clone());
             loop {
-                let command = shell.prompt(&format!("{} - PACMAN", &self.user));
-                if command.is_empty() { continue; }
+                let command = shell.prompt(&format!("{} - GHOST", &self.user));
+                if command.is_empty() {
+                    continue;
+                }
                 match command[0].as_str() {
                     "move" => {
                         let dir = command[1].chars().next().unwrap();
@@ -111,11 +120,7 @@ impl Ghost {
             }
             let game_str = serde_json::to_string(&game).unwrap();
             let start = current_time();
-            if self
-                .stream
-                .write_all(game_str.as_bytes())
-                .is_err()
-            {
+            if self.stream.write_all(game_str.as_bytes()).is_err() {
                 return self.fail();
             }
             self.latencies

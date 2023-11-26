@@ -29,7 +29,9 @@ impl Idle {
         let shell = Shell::new(&commands, self.info.keep_running.clone());
         loop {
             let command = shell.prompt(&format!("{} - IDLE", &self.user));
-            if command.is_empty() { continue; }
+            if command.is_empty() {
+                continue;
+            }
             match command[0].as_str() {
                 "lideres" => {
                     self.info.server.send(Message {

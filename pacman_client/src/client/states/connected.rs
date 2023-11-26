@@ -43,7 +43,9 @@ impl Connected {
         let shell = Shell::new(&commands, self.info.keep_running.clone());
         loop {
             let command = shell.prompt("SEM LOGIN");
-            if command.is_empty() { continue; }
+            if command.is_empty() {
+                continue;
+            }
             match command[0].as_str() {
                 "novo" => {
                     let (user, passwd) = (&command[1], &command[2]);

@@ -30,6 +30,9 @@ impl Pacman {
             while keep_running1.load(Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(33));
                 if let Ok((mut stream, _)) = listener.accept() {
+                    stream
+                        .set_read_timeout(Some(Duration::from_secs(60)))
+                        .unwrap();
                     let mut buf = [0u8; 9001];
                     let Ok(amt) = stream.read(&mut buf) else {
                             continue;
@@ -56,6 +59,11 @@ impl Pacman {
 
     pub fn fail(self) {
         println!("Falha no jogo P2P!");
+        let mut conn = self.connection.lock().unwrap();
+        if let Some((stream, _)) = conn.as_mut() {
+            let _ = stream.shutdown(std::net::Shutdown::Both);
+        }
+        drop(conn);
         self.info.server.send(Message {
             connection: self.info.connection,
             message: MessageEnum::QuitGameRequest,
@@ -67,6 +75,11 @@ impl Pacman {
 
     pub fn finish(self, game: Game) {
         println!("Jogo P2P encerrado com pontuação {}!", game.score());
+        let mut conn = self.connection.lock().unwrap();
+        if let Some((stream, _)) = conn.as_mut() {
+            let _ = stream.shutdown(std::net::Shutdown::Both);
+        }
+        drop(conn);
         self.info.server.send(Message {
             connection: self.info.connection,
             message: MessageEnum::AddLeaderboardEntry(LeaderboardEntry {
@@ -106,10 +119,7 @@ impl Pacman {
                 let game_str = serde_json::to_string(&game).unwrap();
                 let mut buf = [0u8; 9001];
                 let start = current_time();
-                if stream
-                    .write_all(game_str.as_bytes())
-                    .is_err()
-                {
+                if stream.write_all(game_str.as_bytes()).is_err() {
                     println!("Erro de conexão com o usuário {}", ghost_user);
                     *conn = None;
                 } else {
@@ -119,7 +129,9 @@ impl Pacman {
                         if amt == 0 {
                             println!("Conexão fechada!");
                             *conn = None;
-                        } else if let Ok(remote_game) = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()) {
+                        } else if let Ok(remote_game) =
+                            serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap())
+                        {
                             game = remote_game
                         } else {
                             println!("Erro de conexão com o usuário {}", ghost_user);
@@ -145,7 +157,9 @@ impl Pacman {
             let shell = Shell::new(&commands, self.info.keep_running.clone());
             loop {
                 let command = shell.prompt(&format!("{} - PACMAN", &self.user));
-                if command.is_empty() { continue; }
+                if command.is_empty() {
+                    continue;
+                }
                 match command[0].as_str() {
                     "move" => {
                         let dir = command[1].chars().next().unwrap();

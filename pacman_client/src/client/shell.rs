@@ -1,7 +1,7 @@
 use std::io::BufRead;
 use std::io::Write;
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 
 pub struct Shell {
     keep_running: Arc<AtomicBool>,
@@ -15,7 +15,7 @@ impl Shell {
                 .iter()
                 .map(std::string::ToString::to_string)
                 .collect(),
-                keep_running
+            keep_running,
         }
     }
 
