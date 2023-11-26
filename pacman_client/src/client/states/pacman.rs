@@ -1,6 +1,6 @@
 use std::net::{TcpListener, TcpStream};
 
-use super::*;
+use super::CommonInfo;
 
 pub struct Pacman {
     info: CommonInfo,
@@ -10,6 +10,7 @@ pub struct Pacman {
 }
 
 impl Pacman {
+    #[must_use]
     pub fn new(info: CommonInfo, user: String, listener: TcpListener) -> Self {
         Self {
             info,

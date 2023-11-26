@@ -8,13 +8,16 @@ pub struct Shell {
 impl Shell {
     pub fn new<T: ToString>(allowed_commands: &[T]) -> Self {
         Shell {
-            allowed_commands: allowed_commands.iter().map(|s| s.to_string()).collect(),
+            allowed_commands: allowed_commands
+                .iter()
+                .map(std::string::ToString::to_string)
+                .collect(),
         }
     }
 
     pub fn help(&self) {
         println!("Comandos:");
-        for command in self.allowed_commands.iter() {
+        for command in &self.allowed_commands {
             println!(
                 "- {}",
                 match command.as_str() {
@@ -36,6 +39,7 @@ impl Shell {
         }
     }
 
+    #[must_use]
     pub fn prompt(&self, decoration: &str) -> Vec<String> {
         loop {
             print!("{decoration} > ");
@@ -43,7 +47,10 @@ impl Shell {
             let mut lock = std::io::stdin().lock();
             let mut line = String::new();
             let _ = lock.read_line(&mut line).unwrap();
-            let tokens: Vec<String> = line.split_whitespace().map(|s| s.to_owned()).collect();
+            let tokens: Vec<String> = line
+                .split_whitespace()
+                .map(std::borrow::ToOwned::to_owned)
+                .collect();
             if tokens.is_empty() {
                 continue;
             }

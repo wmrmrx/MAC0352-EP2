@@ -1,12 +1,16 @@
 use std::sync::atomic::Ordering;
 
-use super::*;
+use super::{
+    heartbeat, server_client, watch, CommonInfo, CreateUserRequest, Idle, LoginRequest, Message,
+    MessageEnum, ServerMessage, Shell, WatchErr,
+};
 
 pub struct Connected {
     info: CommonInfo,
 }
 
 impl Connected {
+    #[must_use]
     pub fn new(mut info: CommonInfo) -> Option<Self> {
         info.server.send(Message {
             connection: info.connection,
@@ -28,6 +32,7 @@ impl Connected {
         }
     }
 
+    #[must_use]
     pub fn from_logout(info: CommonInfo) -> Self {
         Self { info }
     }
@@ -44,8 +49,8 @@ impl Connected {
                     self.info.server.send(Message {
                         connection: self.info.connection,
                         message: MessageEnum::CreateUserRequest(CreateUserRequest {
-                            user: user.to_owned(),
-                            passwd: passwd.to_owned(),
+                            user: user.clone(),
+                            passwd: passwd.clone(),
                         }),
                     });
                     match watch(&self.info.recv, |msg| -> bool {
@@ -73,8 +78,8 @@ impl Connected {
                     self.info.server.send(Message {
                         connection: self.info.connection,
                         message: MessageEnum::LoginRequest(LoginRequest {
-                            user: user.to_owned(),
-                            passwd: passwd.to_owned(),
+                            user: user.clone(),
+                            passwd: passwd.clone(),
                         }),
                     });
                     match watch(&self.info.recv, |msg| -> bool {
@@ -92,7 +97,7 @@ impl Connected {
                         }
                         Err(WatchErr::Disconnection) => return,
                     }
-                    let idle_client = Idle::new(self.info, user.to_owned());
+                    let idle_client = Idle::new(self.info, user.clone());
                     return idle_client.run();
                 }
                 "tchau" => {

@@ -7,7 +7,10 @@ use pacman_communication::{
 
 use crate::client::states::{ghost::Ghost, pacman::Pacman};
 
-use super::*;
+use super::{
+    watch, CommonInfo, Connected, ConnectedUsersResponse, LeaderboardResponse, Message,
+    MessageEnum, Ordering, ServerMessage, Shell, WatchErr,
+};
 
 pub struct Idle {
     info: CommonInfo,
@@ -15,6 +18,7 @@ pub struct Idle {
 }
 
 impl Idle {
+    #[must_use]
     pub fn new(info: CommonInfo, user: String) -> Self {
         Self { info, user }
     }

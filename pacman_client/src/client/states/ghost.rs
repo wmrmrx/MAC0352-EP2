@@ -1,6 +1,6 @@
 use std::net::{SocketAddr, TcpStream};
 
-use super::*;
+use super::CommonInfo;
 
 pub struct Ghost {
     info: CommonInfo,
@@ -9,6 +9,7 @@ pub struct Ghost {
 }
 
 impl Ghost {
+    #[must_use]
     pub fn new(_info: CommonInfo, _user: String, _pacman_addr: SocketAddr) -> Self {
         todo!();
     }
