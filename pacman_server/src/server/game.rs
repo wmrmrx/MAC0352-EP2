@@ -56,7 +56,7 @@ impl ConnectionTable {
     pub fn kick(&mut self, conn: &Connection) -> bool {
         let Some(conn_data) = self.connections.get_mut(conn) else { return false; };
         let Some(user) = conn_data.user.as_ref() else { return false; };
-        use GameStatus::*;
+        use GameStatus::{Ghost, Idle, Pacman};
         match conn_data.status {
             Pacman(_) => {
                 log::info!("Kicking pacman (connection: {conn:?}, user: {user}). Also kicking ghost from the game if it exists.");
@@ -149,7 +149,7 @@ impl ConnectionTable {
         } else {
             log::info!("User {user} with connection {conn:?} created a game on {listener_addr:?}");
             conn_data.status = GameStatus::Pacman(listener_addr);
-            self.pacmans.insert(user.to_owned(), None);
+            self.pacmans.insert(user.clone(), None);
             true
         }
     }
@@ -166,8 +166,8 @@ impl ConnectionTable {
             if other_player.is_some() {
                 return None;
             }
-            *other_player = Some(user.to_owned());
-            self.ghosts.insert(user.to_owned(), pacman.to_owned());
+            *other_player = Some(user.clone());
+            self.ghosts.insert(user.clone(), pacman.to_owned());
             log::info!("Ghost (user: {user}, connection: {conn:?}) joined game created by user {pacman} with connection {pacman_conn:?}");
             Some(addr)
         }();

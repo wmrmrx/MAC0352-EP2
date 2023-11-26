@@ -7,9 +7,7 @@ pub struct Connected {
 }
 
 impl Connected {
-    pub fn new(
-        mut info: CommonInfo
-    ) -> Option<Self> {
+    pub fn new(mut info: CommonInfo) -> Option<Self> {
         info.server.send(Message {
             connection: info.connection,
             message: MessageEnum::ConnectRequest,
@@ -24,18 +22,14 @@ impl Connected {
                     info.recv,
                     info.keep_running.clone(),
                 );
-                Some(Self {
-                    info
-                })
+                Some(Self { info })
             }
             Err(_) => None,
         }
     }
 
     pub fn from_logout(info: CommonInfo) -> Self {
-        Self {
-            info
-        }
+        Self { info }
     }
 
     pub fn run(self) {

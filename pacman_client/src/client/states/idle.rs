@@ -1,8 +1,11 @@
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 
-use pacman_communication::{client_server::{CreateGameRequest, JoinGameRequest}, server_client::{CreateGameResponse, JoinGameResponse}};
+use pacman_communication::{
+    client_server::{CreateGameRequest, JoinGameRequest},
+    server_client::{CreateGameResponse, JoinGameResponse},
+};
 
-use crate::client::states::{pacman::Pacman, ghost::Ghost};
+use crate::client::states::{ghost::Ghost, pacman::Pacman};
 
 use super::*;
 
@@ -74,7 +77,9 @@ impl Idle {
                     let pacman = command[1].as_str();
                     self.info.server.send(Message {
                         connection: self.info.connection,
-                        message: MessageEnum::JoinGameRequest(JoinGameRequest { pacman: pacman.to_owned() } ),
+                        message: MessageEnum::JoinGameRequest(JoinGameRequest {
+                            pacman: pacman.to_owned(),
+                        }),
                     });
                     match watch(&self.info.recv, |msg| -> bool {
                         matches!(msg, ServerMessage::JoinGameResponse(_))

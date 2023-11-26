@@ -6,13 +6,16 @@ pub struct Pacman {
     info: CommonInfo,
     user: String,
     listener: TcpListener,
-    connection: Option<TcpStream>
+    connection: Option<TcpStream>,
 }
 
 impl Pacman {
     pub fn new(info: CommonInfo, user: String, listener: TcpListener) -> Self {
         Self {
-            info, user, listener, connection: None
+            info,
+            user,
+            listener,
+            connection: None,
         }
     }
 

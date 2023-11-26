@@ -1,7 +1,7 @@
-pub mod ghost;
-pub mod pacman;
 pub mod connected;
+pub mod ghost;
 pub mod idle;
+pub mod pacman;
 
 pub use connected::Connected;
 
@@ -22,4 +22,4 @@ pub use std::sync::{atomic::AtomicBool, mpsc::Receiver, Arc};
 
 use super::heartbeat;
 use super::shell::Shell;
-use pacman_communication::{server_client};
+use pacman_communication::server_client;

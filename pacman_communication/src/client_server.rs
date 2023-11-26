@@ -23,7 +23,7 @@ pub enum MessageEnum {
     CreateGameRequest(CreateGameRequest),
     JoinGameRequest(JoinGameRequest),
     LeaderboardRequest,
-    AddLeaderboardEntry(LeaderboardEntry)
+    AddLeaderboardEntry(LeaderboardEntry),
 }
 
 #[derive(Serialize, Deserialize, Debug)]

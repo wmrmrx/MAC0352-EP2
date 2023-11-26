@@ -39,7 +39,11 @@ pub fn run(port: u16) {
             message: msg,
         } = msg;
 
-        use client_server::MessageEnum::*;
+        use client_server::MessageEnum::{
+            AddLeaderboardEntry, ChangePasswordRequest, ConnectRequest, ConnectedUsersRequest,
+            CreateGameRequest, CreateUserRequest, Disconnect, Heartbeat, JoinGameRequest,
+            LeaderboardRequest, LoginRequest, LogoutRequest, QuitGameRequest,
+        };
         use server_client::Message;
         match msg {
             ConnectRequest => {

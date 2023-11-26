@@ -12,7 +12,7 @@ use pacman_communication::{
     current_time, server_client::Message, HEARTBEAT_INTERVAL, HEARTBEAT_TIMEOUT,
 };
 
-/// Watchs for HEARTBEAT_TIMEOUT and also sends heartbeats every HEARTBEAT_INTERVAL
+/// Watchs for `HEARTBEAT_TIMEOUT` and also sends heartbeats every `HEARTBEAT_INTERVAL`
 pub fn setup(conn_table: Arc<Mutex<ConnectionTable>>) {
     {
         // Heartbeat watcher thread

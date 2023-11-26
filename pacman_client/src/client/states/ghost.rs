@@ -1,4 +1,4 @@
-use std::net::{TcpStream, SocketAddr};
+use std::net::{SocketAddr, TcpStream};
 
 use super::*;
 
@@ -13,6 +13,5 @@ impl Ghost {
         todo!();
     }
 
-    pub fn run(self) {
-    }
+    pub fn run(self) {}
 }

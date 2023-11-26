@@ -25,9 +25,10 @@ fn main() {
     // Set current directory to configuration directory
     let config_dir_path = Path::new(&args.config_dir);
     if config_dir_path.exists() {
-        if !config_dir_path.is_dir() {
-            panic!("Configuration directory path supplied already exists and is not a directory");
-        }
+        assert!(
+            config_dir_path.is_dir(),
+            "Configuration directory path supplied already exists and is not a directory"
+        );
     } else {
         std::fs::create_dir(config_dir_path).expect("Failed to create configuration directory");
     }
