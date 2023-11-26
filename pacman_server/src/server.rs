@@ -51,14 +51,17 @@ pub fn run(port: u16) {
                 if conn_table.insert(&conn) {
                     conn.send(Message::ConnectResponse);
                 }
+                drop(conn_table);
             }
             Heartbeat => {
                 let mut conn_table = conn_table.lock().unwrap();
                 conn_table.set_heartbeat(&conn);
+                drop(conn_table);
             }
             Disconnect => {
                 let mut conn_table = conn_table.lock().unwrap();
                 conn_table.remove(&conn);
+                drop(conn_table);
             }
             CreateUserRequest(req) => {
                 if database.create_user(&req.user, &req.passwd) {
@@ -73,8 +76,10 @@ pub fn run(port: u16) {
                     let mut conn_table = conn_table.lock().unwrap();
                     if conn_table.login(&conn, &req.user) {
                         conn.send(Message::LoginResponse(LoginResponse::Ok));
+                        drop(conn_table);
                         continue;
                     }
+                    drop(conn_table);
                 }
                 conn.send(Message::LoginResponse(LoginResponse::Err));
             }
@@ -89,10 +94,12 @@ pub fn run(port: u16) {
                                 &conn
                             );
                             conn.send(Message::ChangePasswordResponse(ChangePasswordResponse::Ok));
+                            drop(conn_table);
                             continue;
                         }
                     }
                 }
+                drop(conn_table);
                 conn.send(Message::ChangePasswordResponse(ChangePasswordResponse::Err));
             }
             LogoutRequest => {
@@ -105,6 +112,7 @@ pub fn run(port: u16) {
                         }
                     }
                 }
+                drop(conn_table);
             }
             ConnectedUsersRequest => {
                 let conn_table = conn_table.lock().unwrap();
@@ -133,6 +141,7 @@ pub fn run(port: u16) {
                         }
                     }
                 }
+                drop(conn_table);
                 conn.send(Message::ConnectedUsersResponse(ConnectedUsersResponse {
                     users: users.into_boxed_slice(),
                 }));
@@ -140,6 +149,7 @@ pub fn run(port: u16) {
             QuitGameRequest => {
                 let mut conn_table = conn_table.lock().unwrap();
                 let _ = conn_table.kick(&conn);
+                drop(conn_table);
             }
             CreateGameRequest(req) => {
                 let mut conn_table = conn_table.lock().unwrap();
@@ -148,14 +158,16 @@ pub fn run(port: u16) {
                 } else {
                     conn.send(Message::CreateGameResponse(CreateGameResponse::Err));
                 }
+                drop(conn_table);
             }
             JoinGameRequest(req) => {
                 let mut conn_table = conn_table.lock().unwrap();
                 if let Some(addr) = conn_table.join_game(&conn, &req.pacman) {
                     conn.send(Message::JoinGameResponse(JoinGameResponse::Ok(addr)));
                 } else {
-                    conn.send(Message::CreateGameResponse(CreateGameResponse::Err));
+                    conn.send(Message::JoinGameResponse(JoinGameResponse::Err));
                 }
+                drop(conn_table);
             }
             LeaderboardRequest => {
                 conn.send(Message::LeaderboardResponse(LeaderboardResponse {

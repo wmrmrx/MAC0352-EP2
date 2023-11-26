@@ -40,9 +40,10 @@ impl Connected {
     pub fn run(self) {
         println!(">>> CONECTADO AO SERVIDOR COM SUCESSO!");
         let commands = ["novo", "entra", "tchau"];
-        let shell = Shell::new(&commands);
+        let shell = Shell::new(&commands, self.info.keep_running.clone());
         loop {
-            let command = shell.prompt("");
+            let command = shell.prompt("SEM LOGIN");
+            if command.is_empty() { continue; }
             match command[0].as_str() {
                 "novo" => {
                     let (user, passwd) = (&command[1], &command[2]);
@@ -90,6 +91,7 @@ impl Connected {
                                 msg
                             {
                                 println!("Login não aceito, talvez a senha ou o usuário podem estar errados");
+                                continue;
                             }
                         }
                         Err(WatchErr::Timeout) => {

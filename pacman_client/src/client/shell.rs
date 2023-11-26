@@ -1,17 +1,21 @@
 use std::io::BufRead;
 use std::io::Write;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 pub struct Shell {
+    keep_running: Arc<AtomicBool>,
     allowed_commands: Vec<String>,
 }
 
 impl Shell {
-    pub fn new<T: ToString>(allowed_commands: &[T]) -> Self {
+    pub fn new<T: ToString>(allowed_commands: &[T], keep_running: Arc<AtomicBool>) -> Self {
         Shell {
             allowed_commands: allowed_commands
                 .iter()
                 .map(std::string::ToString::to_string)
                 .collect(),
+                keep_running
         }
     }
 
@@ -42,6 +46,10 @@ impl Shell {
     #[must_use]
     pub fn prompt(&self, decoration: &str) -> Vec<String> {
         loop {
+            if !self.keep_running.load(std::sync::atomic::Ordering::Relaxed) {
+                println!("Encerrando shell...");
+                return Vec::new();
+            }
             print!("{decoration} > ");
             std::io::stdout().flush().unwrap();
             let mut lock = std::io::stdin().lock();

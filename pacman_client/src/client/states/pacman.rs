@@ -136,9 +136,10 @@ impl Pacman {
             game.show();
             println!("Seu turno!");
             let commands = ["move", "atraso", "encerra"];
-            let shell = Shell::new(&commands);
+            let shell = Shell::new(&commands, self.info.keep_running.clone());
             loop {
                 let command = shell.prompt(&format!("{} - PACMAN", &self.user));
+                if command.is_empty() { continue; }
                 match command[0].as_str() {
                     "move" => {
                         let dir = command[1].chars().next().unwrap();

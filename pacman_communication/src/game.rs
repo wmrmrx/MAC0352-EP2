@@ -58,7 +58,7 @@ impl Game {
         if let Some((x, y)) = self.remote_ghost {
             copy[x][y] = b'F';
         }
-        for line in self.board {
+        for line in copy {
             println!("{}", std::str::from_utf8(&line).unwrap());
         }
     }
