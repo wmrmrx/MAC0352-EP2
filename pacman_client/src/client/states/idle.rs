@@ -1,8 +1,8 @@
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 
 use pacman_communication::{
-    client_server::{CreateGameRequest, JoinGameRequest},
-    server_client::{CreateGameResponse, JoinGameResponse},
+    client_server::{CreateGameRequest, JoinGameRequest, ChangePasswordRequest},
+    server_client::{CreateGameResponse, JoinGameResponse, ChangePasswordResponse},
 };
 
 use crate::client::states::{ghost::Ghost, pacman::Pacman};
@@ -24,7 +24,7 @@ impl Idle {
     }
 
     pub fn run(self) {
-        let commands = ["lideres", "l", "inicia", "desafio", "sai", "tchau"];
+        let commands = ["senha", "lideres", "l", "inicia", "desafio", "sai", "tchau"];
 
         let shell = Shell::new(&commands, self.info.keep_running.clone());
         loop {
@@ -33,6 +33,31 @@ impl Idle {
                 continue;
             }
             match command[0].as_str() {
+                "senha" => {
+                    self.info.server.send(Message {
+                        connection: self.info.connection,
+                        message: MessageEnum::ChangePasswordRequest(ChangePasswordRequest {
+                            old_passwd: command[1].clone(),
+                            new_passwd: command[2].clone()
+                        }),
+                    });
+                    match watch(&self.info.recv, |msg| -> bool {
+                        matches!(msg, ServerMessage::ChangePasswordResponse(_))
+                    }) {
+                        Ok(msg) => {
+                            let ServerMessage::ChangePasswordResponse(response) = msg else { unreachable!() };
+                            if let ChangePasswordResponse::Ok = response {
+                                println!("Senha mudada com sucesso!");
+                            } else {
+                                println!("Mudança de senha rejeitada pelo servidor!");
+                            }
+                        }
+                        Err(WatchErr::Timeout) => {
+                            println!("Timeout esperando pelo servidor!");
+                        }
+                        Err(WatchErr::Disconnection) => return,
+                    }
+                }
                 "lideres" => {
                     self.info.server.send(Message {
                         connection: self.info.connection,
