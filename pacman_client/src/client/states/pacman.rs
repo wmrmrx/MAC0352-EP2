@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use pacman_communication::{LeaderboardEntry, current_time, game::Game};
+use pacman_communication::{current_time, game::Game, LeaderboardEntry};
 use rand::seq::SliceRandom;
 
 use super::*;
@@ -53,7 +53,7 @@ impl Pacman {
             keep_running,
             user,
             connection,
-            latencies: Vec::new()
+            latencies: Vec::new(),
         }
     }
 
@@ -65,7 +65,7 @@ impl Pacman {
         });
         self.keep_running.store(false, Ordering::Relaxed);
         let idle_client = Idle::new(self.info, self.user);
-        return idle_client.run();
+        idle_client.run()
     }
 
     pub fn finish(self, game: Game) {
@@ -79,7 +79,7 @@ impl Pacman {
         });
         self.keep_running.store(false, Ordering::Relaxed);
         let idle_client = Idle::new(self.info, self.user);
-        return idle_client.run();
+        idle_client.run()
     }
 
     pub fn run(mut self) {
@@ -108,14 +108,18 @@ impl Pacman {
                 let _ = stream.write_all(serde_json::to_string(&game).unwrap().as_bytes());
                 println!("Esperando pelo turno de {}", ghost_user);
                 let start = current_time();
-                if stream.write_all(serde_json::to_string(&game).unwrap().as_bytes()).is_err() {
+                if stream
+                    .write_all(serde_json::to_string(&game).unwrap().as_bytes())
+                    .is_err()
+                {
                     println!("Erro de conexão com o usuário {}", ghost_user);
                     *conn = None;
                 } else {
                     let mut buf = [0u8; 9001];
                     if let Ok(amt) = stream.read(&mut buf) {
                         let latency = current_time() - start;
-                        game = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()).unwrap();
+                        game = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap())
+                            .unwrap();
                         game.show();
                         self.latencies.push((latency, ghost_user.to_owned()));
                     } else {
@@ -151,7 +155,7 @@ impl Pacman {
                         }
                         let len = self.latencies.len().min(3);
                         println!("Últimas latências:");
-                        println!("{:?}", &self.latencies[self.latencies.len()-1-len..]);
+                        println!("{:?}", &self.latencies[self.latencies.len() - 1 - len..]);
                     }
                     "encerra" => {
                         return self.finish(game);

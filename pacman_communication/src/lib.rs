@@ -2,8 +2,8 @@
 //! In this module are things relevant to both the client and server
 
 pub mod client_server;
-pub mod server_client;
 pub mod game;
+pub mod server_client;
 
 use std::{
     io::Write,

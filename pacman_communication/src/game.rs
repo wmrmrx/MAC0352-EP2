@@ -155,7 +155,7 @@ impl Game {
     pub fn add_remote_ghost(&mut self) {
         if self.remote_ghost.is_none() {
             self.remote_ghost = Some((3, 3)); // totally random starting position
-                                          }
+        }
     }
 
     pub fn remove_remote_ghost(&mut self) {

@@ -1,6 +1,10 @@
-use std::{net::{SocketAddr, TcpStream}, time::Duration, io::{Write, Read}};
+use std::{
+    io::{Read, Write},
+    net::{SocketAddr, TcpStream},
+    time::Duration,
+};
 
-use pacman_communication::{game::Game, current_time};
+use pacman_communication::{current_time, game::Game};
 
 use super::*;
 
@@ -13,18 +17,23 @@ pub struct Ghost {
 }
 
 impl Ghost {
-    #[must_use]
-    pub fn new_and_run(info: CommonInfo, user: String, pacman_addr: SocketAddr, pacman_user: String) {
+    pub fn new_and_run(
+        info: CommonInfo,
+        user: String,
+        pacman_addr: SocketAddr,
+        pacman_user: String,
+    ) {
         if let Ok(mut stream) = TcpStream::connect(pacman_addr) {
             stream.write_all(user.as_bytes()).unwrap();
             println!("Conectado ao Pacman com sucesso!");
-            return Self {
+            Self {
                 info,
                 user,
                 stream,
                 pacman_user,
-                latencies: Vec::new()
-            }.run();
+                latencies: Vec::new(),
+            }
+            .run()
         } else {
             println!("Conexão ao Pacman não foi bem sucedida!");
             info.server.send(Message {
@@ -32,7 +41,7 @@ impl Ghost {
                 message: MessageEnum::QuitGameRequest,
             });
             let idle_client = Idle::new(info, user);
-            return idle_client.run();
+            idle_client.run()
         }
     }
 
@@ -43,7 +52,7 @@ impl Ghost {
             message: MessageEnum::QuitGameRequest,
         });
         let idle_client = Idle::new(self.info, self.user);
-        return idle_client.run();
+        idle_client.run()
     }
 
     pub fn fail(self) {
@@ -53,14 +62,15 @@ impl Ghost {
             message: MessageEnum::QuitGameRequest,
         });
         let idle_client = Idle::new(self.info, self.user);
-        return idle_client.run();
+        idle_client.run()
     }
 
     fn run(mut self) {
         let mut buf = [0u8; 9001];
         loop {
             let Ok(amt) = self.stream.read(&mut buf) else { return self.fail(); };
-            let mut game: Game = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()).unwrap();
+            let mut game: Game =
+                serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()).unwrap();
             game.show();
             println!("Seu turno!");
             if game.game_over() {
@@ -83,7 +93,7 @@ impl Ghost {
                         }
                         let len = self.latencies.len().min(3);
                         println!("Últimas latências:");
-                        println!("{:?}", &self.latencies[self.latencies.len()-1-len..]);
+                        println!("{:?}", &self.latencies[self.latencies.len() - 1 - len..]);
                     }
                     "encerra" => {
                         return self.finish();
@@ -92,10 +102,15 @@ impl Ghost {
                 }
             }
             let start = current_time();
-            if self.stream.write_all(serde_json::to_string(&game).unwrap().as_bytes()).is_err() {
+            if self
+                .stream
+                .write_all(serde_json::to_string(&game).unwrap().as_bytes())
+                .is_err()
+            {
                 return self.fail();
             }
-            self.latencies.push((current_time() - start, self.pacman_user.clone()));
+            self.latencies
+                .push((current_time() - start, self.pacman_user.clone()));
             if game.game_over() {
                 return self.finish();
             }
