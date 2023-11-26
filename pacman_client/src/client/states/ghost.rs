@@ -68,10 +68,14 @@ impl Ghost {
     fn run(mut self) {
         let mut buf = [0u8; 9001];
         loop {
-            println!("Aguardando pelo pacman...");
+            println!("Aguardando pelo turno de {}....", &self.pacman_user);
+            let mut game: Game;
             let Ok(amt) = self.stream.read(&mut buf) else { return self.fail(); };
-            let mut game: Game =
-                serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()).unwrap();
+            if let Ok(remote_game) = serde_json::from_str(std::str::from_utf8(&buf[..amt]).unwrap()) {
+                game = remote_game;
+            } else {
+                return self.fail();
+            }
             game.show();
             println!("Seu turno!");
             if game.game_over() {
@@ -103,10 +107,11 @@ impl Ghost {
                     _ => unreachable!(),
                 }
             }
+            let game_str = serde_json::to_string(&game).unwrap();
             let start = current_time();
             if self
                 .stream
-                .write_all(serde_json::to_string(&game).unwrap().as_bytes())
+                .write_all(game_str.as_bytes())
                 .is_err()
             {
                 return self.fail();
