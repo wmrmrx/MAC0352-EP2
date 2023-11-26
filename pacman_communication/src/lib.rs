@@ -3,6 +3,7 @@
 
 pub mod client_server;
 pub mod server_client;
+pub mod game;
 
 use std::{
     io::Write,

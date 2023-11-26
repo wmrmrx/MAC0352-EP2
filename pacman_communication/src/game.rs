@@ -15,7 +15,7 @@ const INITIAL_BOARD: [&str; H] = [
     "******.**.*.. ..*.**.******",
 ];
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Game {
     board: [[u8; W]; H],
     pacman: (usize, usize),
@@ -45,6 +45,21 @@ impl Game {
             local_ghost,
             remote_ghost,
             ended: false,
+        }
+    }
+
+    pub fn show(&self) {
+        println!("Estado do jogo:");
+        let mut copy = self.board;
+        let (x, y) = self.pacman;
+        copy[x][y] = b'P';
+        let (x, y) = self.local_ghost;
+        copy[x][y] = b'F';
+        if let Some((x, y)) = self.remote_ghost {
+            copy[x][y] = b'F';
+        }
+        for line in self.board {
+            println!("{}", std::str::from_utf8(&line).unwrap());
         }
     }
 
@@ -135,6 +150,16 @@ impl Game {
         }
         *remote_ghost = (nx, ny);
         self.update_game_state();
+    }
+
+    pub fn add_remote_ghost(&mut self) {
+        if self.remote_ghost.is_none() {
+            self.remote_ghost = Some((3, 3)); // totally random starting position
+                                          }
+    }
+
+    pub fn remove_remote_ghost(&mut self) {
+        self.remote_ghost = None;
     }
 }
 
